@@ -45,3 +45,14 @@ buildNumber.properties
 
 *.iml
 
+/.idea/.gitignore
+/.idea/ApifoxUploaderProjectSetting.xml
+/.idea/compiler.xml
+/.idea/dataSources.xml
+/.idea/encodings.xml
+/.idea/jarRepositories.xml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/prettier.xml
+/.idea/mybatisx/templates.xml
+/.idea/vcs.xml
