@@ -1,6 +1,7 @@
 package sit.zlx.enotebackend.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -17,6 +18,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import sit.zlx.enotebackend.service.UserService;
 
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.Random;
@@ -42,6 +45,13 @@ public class AuthServiceImpl implements AuthService {
         this.userService = userService;
         this.mailSender = mailSender;
         this.redisTemplate = redisTemplate;
+    }
+
+    public static String generateRandomString(int length) {
+        SecureRandom random = new SecureRandom();
+        byte[] bytes = new byte[length];
+        random.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     // 使用邮箱登录
@@ -105,7 +115,7 @@ public class AuthServiceImpl implements AuthService {
 
         Random random = new Random();
         int code = random.nextInt(900000) + 100000;
-        String text = (hasAccount ? "您正在修改密码，验证码为：" : "您正在注册，验证码为：")
+        String text = (hasAccount ? "您正在重置密码，验证码为：" : "您正在注册，验证码为：")
                 + code
                 + "，有效期为三分钟。";
 
@@ -129,7 +139,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public String register(String name, String password, String email, String code, String sessionId) {
+    public String register(String password, String email, String code, String sessionId) {
         String key = "email:" + sessionId + ":" + email + ":false";
 
         if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
@@ -139,16 +149,24 @@ public class AuthServiceImpl implements AuthService {
                 return "验证码已过期，请重新请求";
             } else {
                 if (val.equals(code)) {
-                    User user = userService.getOne(new QueryWrapper<User>().eq("name", name));
+                    User user = userService.getOne(new QueryWrapper<User>().eq("email", email));
 
                     if (user != null)
-                        return "此用户名已被注册，请更换用户名";
+                        return "此邮箱已被注册，请更换邮箱";
 
                     redisTemplate.delete(key);
                     password = passwordEncoder.encode(password);
 
                     User newUser = new User();
                     newUser.setEmail(email);
+
+                    String name;
+
+                    do {
+                        name = "user_" + generateRandomString(8);
+
+                    } while (userService.getOne(new QueryWrapper<User>().eq("name", name)) != null);
+
                     newUser.setName(name);
                     newUser.setPassword(password);
                     newUser.setStatus(1);
@@ -196,7 +214,8 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public Boolean resetPassword(String email, String password) {
         User user = userService.getOne(new QueryWrapper<User>().eq("email", email));
+        user.setPassword(passwordEncoder.encode(password));
 
-        return userService.update(user, new QueryWrapper<User>().eq("email", email));
+        return userService.updateById(user);
     }
 }

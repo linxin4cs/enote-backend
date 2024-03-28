@@ -25,7 +25,6 @@ public class AuthController {
     @Data
     @AllArgsConstructor
     public static class RegisterBody {
-        String name;
         String password;
         String email;
         String code;
@@ -68,7 +67,7 @@ public class AuthController {
     public ResponseDTO<?> register(@RequestBody  RequestDTO<RegisterBody> requestDTO,
                                    HttpSession httpSession) {
 
-        String result = service.register(requestDTO.getData().getName(), requestDTO.getData().getPassword(), requestDTO.getData().getEmail(), requestDTO.getData().getCode(), httpSession.getId());
+        String result = service.register(requestDTO.getData().getPassword(), requestDTO.getData().getEmail(), requestDTO.getData().getCode(), httpSession.getId());
 
         if (result == null) {
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.SUCCESS.getCode(), new ResponseDTO.ResponseData<>("注册成功", null));
@@ -77,11 +76,6 @@ public class AuthController {
         }
     }
 
-    /**
-     * 1. 发验证邮件
-     * 2. 验证验证码是否正确，正确则在 Session 中存一个标记
-     * 3. 用户发起重置密码请求，如果存在标记，则成功重置
-     */
     @PostMapping("/validate-reset-code")
     public ResponseDTO<?> validateResetCode(@RequestBody RequestDTO<ValidateResetCodeBody> requestDTO,
                                             HttpSession httpSession) {

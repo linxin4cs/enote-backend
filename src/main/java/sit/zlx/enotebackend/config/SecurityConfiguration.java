@@ -23,6 +23,7 @@ import sit.zlx.enotebackend.dto.ResponseDTO;
 
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.util.Objects;
 
 @Configuration
 @EnableWebSecurity
@@ -65,8 +66,8 @@ public class SecurityConfiguration {
                 // 7 days
                 .tokenValiditySeconds(3600 * 24 * 7)
                 .and()
-                .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and()
-//                .csrf().disable()
+//                .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and()
+                .csrf().disable()
 //                .cors()
 //                .configurationSource(this.corsConfigurationSource())
 //                .and()
@@ -122,9 +123,11 @@ public class SecurityConfiguration {
     }
 
     private void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException e) throws IOException {
+        String message = Objects.equals(e.getMessage(), "用户名或密码错误") ? "邮箱或密码错误" : e.getMessage();
+
         response.setCharacterEncoding("UTF-8");
         response.setHeader("Content-Type", "application/json;");
-        response.getWriter().write(JSONObject.toJSONString(new ResponseDTO<>(ResponseDTO.STATUS_CODE.UNAUTHORIZED.getCode(), new ResponseDTO.ResponseData<>(e.getMessage(), null))));
+        response.getWriter().write(JSONObject.toJSONString(new ResponseDTO<>(ResponseDTO.STATUS_CODE.UNAUTHORIZED.getCode(), new ResponseDTO.ResponseData<>(message, null))));
     }
 }
 
