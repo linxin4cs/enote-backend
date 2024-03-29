@@ -1,17 +1,16 @@
 package sit.zlx.enotebackend.controller;
 
 import jakarta.servlet.http.HttpSession;
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import sit.zlx.enotebackend.dto.RequestDTO;
 import sit.zlx.enotebackend.dto.ResponseDTO;
 import sit.zlx.enotebackend.service.AuthService;
+import sit.zlx.enotebackend.service.MyUtils;
 
-@Validated
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -23,26 +22,30 @@ public class AuthController {
     }
 
     @Data
-    @AllArgsConstructor
-    public static class RegisterBody {
-        String password;
+    @NoArgsConstructor
+    public static class SendCodeBody {
         String email;
+    }
+
+    @Data
+    @NoArgsConstructor
+    public static class RegisterBody {
+        String email;
+        String password;
         String code;
     }
 
     @Data
-    @AllArgsConstructor
+    @NoArgsConstructor
     public static class ValidateResetCodeBody {
         String email;
         String code;
     }
 
-    @PostMapping("/send-register-code")
-    public ResponseDTO<?> sendRegisterCode(@RequestBody RequestDTO<String> requestDTO,
-                                           HttpSession httpSession) {
-
-        String result = service.sendCode(requestDTO.getData(), httpSession.getId(), false);
-        return returnSendCodeResult(result);
+    @Data
+    @NoArgsConstructor
+    public static class ResetPasswordBody {
+        String password;
     }
 
     @NotNull
@@ -54,18 +57,41 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/send-register-code")
+    public ResponseDTO<?> sendRegisterCode(@RequestBody RequestDTO<SendCodeBody> requestDTO,
+                                           HttpSession httpSession) {
+
+        String emailValidation = MyUtils.Validator.validateEmail(requestDTO.getData().getEmail());
+        if (!emailValidation.isEmpty()) {
+            return new ResponseDTO<>(ResponseDTO.STATUS_CODE.BAD_REQUEST.getCode(), new ResponseDTO.ResponseData<>(emailValidation, null));
+        }
+
+        String result = service.sendCode(requestDTO.getData().getEmail(), httpSession.getId(), false);
+        return returnSendCodeResult(result);
+    }
 
     @PostMapping("/send-reset-code")
-    public ResponseDTO<?> sendResetCode(@RequestBody RequestDTO<String> requestDTO,
+    public ResponseDTO<?> sendResetCode(@RequestBody RequestDTO<SendCodeBody> requestDTO,
                                         HttpSession httpSession) {
 
-        String result = service.sendCode(requestDTO.getData(), httpSession.getId(), true);
+        String emailValidation = MyUtils.Validator.validateEmail(requestDTO.getData().getEmail());
+        if (!emailValidation.isEmpty()) {
+            return new ResponseDTO<>(ResponseDTO.STATUS_CODE.BAD_REQUEST.getCode(), new ResponseDTO.ResponseData<>(emailValidation, null));
+        }
+
+        String result = service.sendCode(requestDTO.getData().getEmail(), httpSession.getId(), true);
         return returnSendCodeResult(result);
     }
 
     @PostMapping("/register")
-    public ResponseDTO<?> register(@RequestBody  RequestDTO<RegisterBody> requestDTO,
+    public ResponseDTO<?> register(@RequestBody RequestDTO<RegisterBody> requestDTO,
                                    HttpSession httpSession) {
+
+        String emailValidation = MyUtils.Validator.validateEmail(requestDTO.getData().getEmail());
+        String passwordValidation = MyUtils.Validator.validatePassword(requestDTO.getData().getPassword());
+        if(!(emailValidation + passwordValidation).isEmpty()) {
+            return new ResponseDTO<>(ResponseDTO.STATUS_CODE.BAD_REQUEST.getCode(), new ResponseDTO.ResponseData<>(emailValidation + passwordValidation, null));
+        }
 
         String result = service.register(requestDTO.getData().getPassword(), requestDTO.getData().getEmail(), requestDTO.getData().getCode(), httpSession.getId());
 
@@ -80,6 +106,11 @@ public class AuthController {
     public ResponseDTO<?> validateResetCode(@RequestBody RequestDTO<ValidateResetCodeBody> requestDTO,
                                             HttpSession httpSession) {
 
+        String emailValidation = MyUtils.Validator.validateEmail(requestDTO.getData().getEmail());
+        if (!emailValidation.isEmpty()) {
+            return new ResponseDTO<>(ResponseDTO.STATUS_CODE.BAD_REQUEST.getCode(), new ResponseDTO.ResponseData<>(emailValidation, null));
+        }
+
         String email = requestDTO.getData().getEmail();
         String result = service.validateCode(email, requestDTO.getData().getCode(), httpSession.getId());
 
@@ -92,14 +123,19 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password")
-    public ResponseDTO<?> resetPassword(@RequestBody RequestDTO<String> requestDTO,
+    public ResponseDTO<?> resetPassword(@RequestBody RequestDTO<ResetPasswordBody> requestDTO,
                                         HttpSession httpSession) {
+
+        String passwordValidation = MyUtils.Validator.validateEmail(requestDTO.getData().getPassword());
+        if (!passwordValidation.isEmpty()) {
+            return new ResponseDTO<>(ResponseDTO.STATUS_CODE.BAD_REQUEST.getCode(), new ResponseDTO.ResponseData<>(passwordValidation, null));
+        }
 
         String email = (String) httpSession.getAttribute("reset-token");
 
         if (email == null) {
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.BAD_REQUEST.getCode(), new ResponseDTO.ResponseData<>("请先完成邮箱验证", null));
-        } else if (service.resetPassword(email, requestDTO.getData())) {
+        } else if (service.resetPassword(email, requestDTO.getData().getPassword())) {
             httpSession.removeAttribute("reset-token");
 
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.SUCCESS.getCode(), new ResponseDTO.ResponseData<>("密码重置成功", null));

@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import static sit.zlx.enotebackend.service.MyUtils.generateRandomString;
 import static sit.zlx.enotebackend.service.impl.UserServiceImpl.ROLE_LIST;
 
 
@@ -45,13 +46,6 @@ public class AuthServiceImpl implements AuthService {
         this.userService = userService;
         this.mailSender = mailSender;
         this.redisTemplate = redisTemplate;
-    }
-
-    public static String generateRandomString(int length) {
-        SecureRandom random = new SecureRandom();
-        byte[] bytes = new byte[length];
-        random.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     // 使用邮箱登录
@@ -131,7 +125,6 @@ public class AuthServiceImpl implements AuthService {
 
             return null;
         } catch (MailException mailException) {
-            mailException.printStackTrace();
             return "验证码发送失败，请联系管理员";
         } finally {
             emailSessions.remove(key);
