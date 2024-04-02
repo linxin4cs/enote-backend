@@ -12,12 +12,12 @@
             <result property="path" column="path" jdbcType="VARCHAR"/>
             <result property="mimeType" column="mimeType" jdbcType="VARCHAR"/>
             <result property="size" column="size" jdbcType="BIGINT"/>
-            <result property="uploadTime" column="uploadTime" jdbcType="TIMESTAMP"/>
+            <result property="uploadAt" column="uploadAt" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,userId,type,
         name,path,mimeType,
-        size,uploadTime
+        size,uploadAt
     </sql>
 </mapper>

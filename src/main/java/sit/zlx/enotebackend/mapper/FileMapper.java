@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 /**
 * @author linxin4cs
 * @description 针对表【file】的数据库操作Mapper
-* @createDate 2024-04-02 23:32:07
+* @createDate 2024-04-03 02:27:40
 * @Entity sit.zlx.enotebackend.domain.File
 */
 public interface FileMapper extends BaseMapper<File> {

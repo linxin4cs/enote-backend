@@ -60,8 +60,8 @@ public class File implements Serializable {
     /**
      * 
      */
-    @TableField(value = "uploadTime")
-    private Date uploadTime;
+    @TableField(value = "uploadAt")
+    private Date uploadAt;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
@@ -85,7 +85,7 @@ public class File implements Serializable {
             && (this.getPath() == null ? other.getPath() == null : this.getPath().equals(other.getPath()))
             && (this.getMimeType() == null ? other.getMimeType() == null : this.getMimeType().equals(other.getMimeType()))
             && (this.getSize() == null ? other.getSize() == null : this.getSize().equals(other.getSize()))
-            && (this.getUploadTime() == null ? other.getUploadTime() == null : this.getUploadTime().equals(other.getUploadTime()));
+            && (this.getUploadAt() == null ? other.getUploadAt() == null : this.getUploadAt().equals(other.getUploadAt()));
     }
 
     @Override
@@ -99,7 +99,7 @@ public class File implements Serializable {
         result = prime * result + ((getPath() == null) ? 0 : getPath().hashCode());
         result = prime * result + ((getMimeType() == null) ? 0 : getMimeType().hashCode());
         result = prime * result + ((getSize() == null) ? 0 : getSize().hashCode());
-        result = prime * result + ((getUploadTime() == null) ? 0 : getUploadTime().hashCode());
+        result = prime * result + ((getUploadAt() == null) ? 0 : getUploadAt().hashCode());
         return result;
     }
 
@@ -116,7 +116,7 @@ public class File implements Serializable {
         sb.append(", path=").append(path);
         sb.append(", mimeType=").append(mimeType);
         sb.append(", size=").append(size);
-        sb.append(", uploadTime=").append(uploadTime);
+        sb.append(", uploadAt=").append(uploadAt);
         sb.append(", serialVersionUID=").append(serialVersionUID);
         sb.append("]");
         return sb.toString();
