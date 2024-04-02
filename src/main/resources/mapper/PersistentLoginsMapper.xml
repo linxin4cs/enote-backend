@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sit.zlx.enotebackend.mapper.PersistentLoginsMapper">
+
+    <resultMap id="BaseResultMap" type="sit.zlx.enotebackend.domain.PersistentLogins">
+            <id property="series" column="series" jdbcType="VARCHAR"/>
+            <result property="username" column="username" jdbcType="VARCHAR"/>
+            <result property="token" column="token" jdbcType="VARCHAR"/>
+            <result property="last_used" column="last_used" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        series,username,token,
+        last_used
+    </sql>
+</mapper>

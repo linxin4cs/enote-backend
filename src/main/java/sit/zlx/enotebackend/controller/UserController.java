@@ -15,6 +15,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sit.zlx.enotebackend.domain.File;
+import sit.zlx.enotebackend.domain.PersistentLogins;
 import sit.zlx.enotebackend.domain.User;
 import sit.zlx.enotebackend.dto.RequestDTO;
 import sit.zlx.enotebackend.dto.ResponseDTO;
@@ -35,14 +36,16 @@ public class UserController {
     private final AuthService authService;
     private final UploadService uploadService;
     private final FileService fileService;
+    private final PersistentLoginsService persistentLoginsService;
 
 
     @Autowired
-    public UserController(UserService userService, AuthService authService, UploadService uploadService, FileService fileService) {
+    public UserController(UserService userService, AuthService authService, UploadService uploadService, FileService fileService, PersistentLoginsService persistentLoginsService) {
         this.userService = userService;
         this.authService = authService;
         this.uploadService = uploadService;
         this.fileService = fileService;
+        this.persistentLoginsService = persistentLoginsService;
     }
 
     @GetMapping("/me")
@@ -146,6 +149,8 @@ public class UserController {
                     currentAuthentication.getCredentials(),
                     newUserDetails.getAuthorities());
 
+            PersistentLogins persistentLogins = persistentLoginsService.getOne(new QueryWrapper<PersistentLogins>().eq("username", currentUser.getUsername()));
+
             String oldEmail = currentUser.getUsername();
             String oldEmailCode = requestDTO.getData().getOldEmailCode();
             String newEmailCode = requestDTO.getData().getNewEmailCode();
@@ -157,6 +162,8 @@ public class UserController {
                 userService.updateById(originalUser);
 
                 context.setAuthentication(newAuthentication);
+                persistentLogins.setUsername(newUsername);
+                persistentLoginsService.update(persistentLogins, new QueryWrapper<PersistentLogins>().eq("username", currentUser.getUsername()));
 
                 return new ResponseDTO<>(ResponseDTO.STATUS_CODE.SUCCESS.getCode(), new ResponseDTO.ResponseData<>("", "修改成功！"));
             }
@@ -181,7 +188,7 @@ public class UserController {
     }
 
     @PostMapping("/edit/password/validate-code")
-    public ResponseDTO<?> validatePasswordCode(@AuthenticationPrincipal UserDetails currentUser, @RequestBody RequestDTO<validatePasswordCodeBody> requestDTO, HttpSession httpSession) {
+    public ResponseDTO<?> validatePasswordCode(@AuthenticationPrincipal UserDetails currentUser, @RequestBody RequestDTO<ValidatePasswordCodeBody> requestDTO, HttpSession httpSession) {
         String password = requestDTO.getData().getPassword();
 
         String passwordValidation = MyUtils.Validator.validatePassword(password);
@@ -226,8 +233,8 @@ public class UserController {
         }
     }
 
-    @PostMapping("/edit/avatar")
-    public ResponseDTO<editAvatarResponse> editAvatar(@AuthenticationPrincipal UserDetails currentUser, @RequestParam("files") MultipartFile[] files) {
+    @PutMapping("/edit/avatar")
+    public ResponseDTO<EditAvatarResponse> editAvatar(@AuthenticationPrincipal UserDetails currentUser, @RequestParam("files") MultipartFile[] files) {
         if (files == null || files.length == 0) {
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.BAD_REQUEST.getCode(), new ResponseDTO.ResponseData<>("请上传文件！", null));
         }
@@ -246,7 +253,7 @@ public class UserController {
             user.setAvatar(avatar);
             userService.updateById(user);
 
-            return new ResponseDTO<>(ResponseDTO.STATUS_CODE.SUCCESS.getCode(), new ResponseDTO.ResponseData<>("修改成功！", new editAvatarResponse(avatar)));
+            return new ResponseDTO<>(ResponseDTO.STATUS_CODE.SUCCESS.getCode(), new ResponseDTO.ResponseData<>("修改成功！", new EditAvatarResponse(avatar)));
         } catch (Exception e) {
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.INTERNAL_SERVER_ERROR.getCode(), new ResponseDTO.ResponseData<>("修改失败！", null));
         }
@@ -275,14 +282,14 @@ public class UserController {
 
     @Data
     @NoArgsConstructor
-    public static class validatePasswordCodeBody {
+    public static class ValidatePasswordCodeBody {
         String password;
         String code;
     }
 
     @Data
     @AllArgsConstructor
-    public static class editAvatarResponse {
+    public static class EditAvatarResponse {
         String avatar;
     }
 }
