@@ -67,7 +67,7 @@ public class UploadServiceImpl implements UploadService {
         Files.copy(multipartFile.getInputStream(), targetLocation);
 
         File file = new File();
-        file.setUuid(storeFileName.replace("." + getExtension(storeFileName), ""));
+        file.setId(storeFileName.replace("." + getExtension(storeFileName), ""));
         file.setUserId(userId);
         file.setType(fileType.toString());
         file.setName(multipartFile.getOriginalFilename());

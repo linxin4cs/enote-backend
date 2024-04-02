@@ -18,8 +18,8 @@ public class File implements Serializable {
     /**
      * 
      */
-    @TableId(value = "uuid")
-    private String uuid;
+    @TableId(value = "id")
+    private String id;
 
     /**
      * 
@@ -78,7 +78,7 @@ public class File implements Serializable {
             return false;
         }
         File other = (File) that;
-        return (this.getUuid() == null ? other.getUuid() == null : this.getUuid().equals(other.getUuid()))
+        return (this.getId() == null ? other.getId() == null : this.getId().equals(other.getId()))
             && (this.getUserId() == null ? other.getUserId() == null : this.getUserId().equals(other.getUserId()))
             && (this.getType() == null ? other.getType() == null : this.getType().equals(other.getType()))
             && (this.getName() == null ? other.getName() == null : this.getName().equals(other.getName()))
@@ -92,7 +92,7 @@ public class File implements Serializable {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((getUuid() == null) ? 0 : getUuid().hashCode());
+        result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
         result = prime * result + ((getUserId() == null) ? 0 : getUserId().hashCode());
         result = prime * result + ((getType() == null) ? 0 : getType().hashCode());
         result = prime * result + ((getName() == null) ? 0 : getName().hashCode());
@@ -109,7 +109,7 @@ public class File implements Serializable {
         sb.append(getClass().getSimpleName());
         sb.append(" [");
         sb.append("Hash = ").append(hashCode());
-        sb.append(", uuid=").append(uuid);
+        sb.append(", id=").append(id);
         sb.append(", userId=").append(userId);
         sb.append(", type=").append(type);
         sb.append(", name=").append(name);

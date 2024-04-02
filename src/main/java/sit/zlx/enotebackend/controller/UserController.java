@@ -19,11 +19,11 @@ import sit.zlx.enotebackend.domain.User;
 import sit.zlx.enotebackend.dto.RequestDTO;
 import sit.zlx.enotebackend.dto.ResponseDTO;
 import sit.zlx.enotebackend.dto.UserDTO;
-import sit.zlx.enotebackend.service.AuthService;
-import sit.zlx.enotebackend.service.MyUtils;
-import sit.zlx.enotebackend.service.UploadService;
-import sit.zlx.enotebackend.service.UserService;
+import sit.zlx.enotebackend.service.*;
 import sit.zlx.enotebackend.service.impl.AuthServiceImpl;
+
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import static sit.zlx.enotebackend.controller.AuthController.returnSendCodeResult;
 
@@ -34,13 +34,15 @@ public class UserController {
     private final UserService userService;
     private final AuthService authService;
     private final UploadService uploadService;
+    private final FileService fileService;
 
 
     @Autowired
-    public UserController(UserService userService, AuthService authService, UploadService uploadService) {
+    public UserController(UserService userService, AuthService authService, UploadService uploadService, FileService fileService) {
         this.userService = userService;
         this.authService = authService;
         this.uploadService = uploadService;
+        this.fileService = fileService;
     }
 
     @GetMapping("/me")
@@ -232,9 +234,15 @@ public class UserController {
 
         try {
             User user = userService.getOne(new QueryWrapper<User>().eq("email", currentUser.getUsername()));
-            File file = uploadService.storeFile(files[0], UploadService.FILE_TYPE.IMAGE,  user.getId());
+            if (user.getAvatar() != null) {
+                File oldFile = fileService.getOne(new QueryWrapper<File>().eq("id", user.getAvatar().split("/")[4]));
+                Files.delete(Paths.get(oldFile.getPath()));
+                fileService.removeById(oldFile.getId());
+            }
 
-            String avatar = "/api/file/image/" + file.getUuid();
+            File file = uploadService.storeFile(files[0], UploadService.FILE_TYPE.IMAGE, user.getId());
+
+            String avatar = "/api/file/image/" + file.getId();
             user.setAvatar(avatar);
             userService.updateById(user);
 
@@ -274,7 +282,7 @@ public class UserController {
 
     @Data
     @AllArgsConstructor
-    public class editAvatarResponse {
+    public static class editAvatarResponse {
         String avatar;
     }
 }

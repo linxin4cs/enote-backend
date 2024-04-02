@@ -5,7 +5,7 @@
 <mapper namespace="sit.zlx.enotebackend.mapper.FileMapper">
 
     <resultMap id="BaseResultMap" type="sit.zlx.enotebackend.domain.File">
-            <id property="uuid" column="uuid" jdbcType="VARCHAR"/>
+            <id property="id" column="id" jdbcType="VARCHAR"/>
             <result property="userId" column="userId" jdbcType="INTEGER"/>
             <result property="type" column="type" jdbcType="CHAR"/>
             <result property="name" column="name" jdbcType="VARCHAR"/>
@@ -16,7 +16,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        uuid,userId,type,
+        id,userId,type,
         name,path,mimeType,
         size,uploadTime
     </sql>

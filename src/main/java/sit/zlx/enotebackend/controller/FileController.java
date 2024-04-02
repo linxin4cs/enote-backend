@@ -14,6 +14,7 @@ import sit.zlx.enotebackend.domain.File;
 import sit.zlx.enotebackend.service.FileService;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/api/file")
@@ -26,10 +27,10 @@ public class FileController {
         this.fileService = fileService;
     }
 
-    @GetMapping("/image/{uuid}")
-    public ResponseEntity<Resource> serveImage(@PathVariable String uuid) {
+    @GetMapping("/image/{id}")
+    public ResponseEntity<Resource> serveImage(@PathVariable String id) {
         try {
-            File file = fileService.getOne(new QueryWrapper<File>().eq("uuid", uuid));
+            File file = fileService.getOne(new QueryWrapper<File>().eq("id", id));
             Path imagePath = Path.of(file.getPath());
             Resource resource = new UrlResource(imagePath.toUri());
             if (resource.exists() || resource.isReadable()) {
@@ -45,11 +46,11 @@ public class FileController {
         }
     }
 
-    @GetMapping("/video/{uuid}")
-    public ResponseEntity<Resource> serveVideo(@PathVariable String uuid) {
+    @GetMapping("/video/{id}")
+    public ResponseEntity<Resource> serveVideo(@PathVariable String id) {
         try {
-            File file = fileService.getOne(new QueryWrapper<File>().eq("uuid", uuid));
-            Path videoPath = Path.of(file.getPath());
+            File file = fileService.getOne(new QueryWrapper<File>().eq("id", id));
+            Path videoPath = Paths.get(file.getPath());
             Resource resource = new UrlResource(videoPath.toUri());
             if (resource.exists() || resource.isReadable()) {
                 return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
@@ -64,10 +65,10 @@ public class FileController {
         }
     }
 
-    @GetMapping("/audio/{uuid}")
-    public ResponseEntity<Resource> serveAudio(@PathVariable String uuid) {
+    @GetMapping("/audio/{id}")
+    public ResponseEntity<Resource> serveAudio(@PathVariable String id) {
         try {
-            File file = fileService.getOne(new QueryWrapper<File>().eq("uuid", uuid));
+            File file = fileService.getOne(new QueryWrapper<File>().eq("id", id));
             Path AudioPath = Path.of(file.getPath());
             Resource resource = new UrlResource(AudioPath.toUri());
             if (resource.exists() || resource.isReadable()) {
