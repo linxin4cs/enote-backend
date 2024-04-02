@@ -1,19 +1,18 @@
 package sit.zlx.enotebackend.interceptor;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import jakarta.annotation.Resource;
-import org.springframework.beans.factory.annotation.Autowired;
-import sit.zlx.enotebackend.dto.UserDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
-import sit.zlx.enotebackend.service.UserService;
 import sit.zlx.enotebackend.domain.User;
+import sit.zlx.enotebackend.dto.UserDTO;
+import sit.zlx.enotebackend.service.UserService;
 
 @Component
 public class AuthorizeInterceptor implements HandlerInterceptor {

@@ -1,10 +1,10 @@
 package sit.zlx.enotebackend.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import sit.zlx.enotebackend.interceptor.AuthorizeInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import sit.zlx.enotebackend.interceptor.AuthorizeInterceptor;
 
 @Configuration
 public class WebConfiguration implements WebMvcConfigurer {
@@ -21,4 +21,5 @@ public class WebConfiguration implements WebMvcConfigurer {
                 .addPathPatterns("/**")
                 .excludePathPatterns("/api/auth/**");
     }
+
 }

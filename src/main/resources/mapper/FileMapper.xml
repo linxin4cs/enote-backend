@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sit.zlx.enotebackend.mapper.FileMapper">
+
+    <resultMap id="BaseResultMap" type="sit.zlx.enotebackend.domain.File">
+            <id property="uuid" column="uuid" jdbcType="VARCHAR"/>
+            <result property="userId" column="userId" jdbcType="INTEGER"/>
+            <result property="type" column="type" jdbcType="CHAR"/>
+            <result property="name" column="name" jdbcType="VARCHAR"/>
+            <result property="path" column="path" jdbcType="VARCHAR"/>
+            <result property="mimeType" column="mimeType" jdbcType="VARCHAR"/>
+            <result property="size" column="size" jdbcType="BIGINT"/>
+            <result property="uploadTime" column="uploadTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        uuid,userId,type,
+        name,path,mimeType,
+        size,uploadTime
+    </sql>
+</mapper>

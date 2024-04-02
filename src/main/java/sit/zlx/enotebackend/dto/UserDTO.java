@@ -1,6 +1,9 @@
 package sit.zlx.enotebackend.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import sit.zlx.enotebackend.domain.User;
 
 import java.util.Date;

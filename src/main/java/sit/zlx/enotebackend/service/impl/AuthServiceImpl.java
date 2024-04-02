@@ -1,12 +1,7 @@
 package sit.zlx.enotebackend.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import sit.zlx.enotebackend.domain.User;
-import sit.zlx.enotebackend.service.AuthService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.MailException;
@@ -16,11 +11,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import sit.zlx.enotebackend.domain.User;
+import sit.zlx.enotebackend.service.AuthService;
 import sit.zlx.enotebackend.service.UserService;
 
-import java.security.SecureRandom;
-import java.util.Base64;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -30,16 +26,15 @@ import static sit.zlx.enotebackend.service.impl.UserServiceImpl.ROLE_LIST;
 
 
 @Service
-@Slf4j
 public class AuthServiceImpl implements AuthService {
 
-    @Value("${spring.mail.properties.from}")
-    private String from;
     private final UserService userService;
     private final MailSender mailSender;
     private final StringRedisTemplate redisTemplate;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    public static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final HashMap<String, String> emailSessions = new HashMap<String, String>();
+    @Value("${spring.mail.properties.from}")
+    private String from;
 
     @Autowired
     AuthServiceImpl(UserService userService, MailSender mailSender, StringRedisTemplate redisTemplate) {
@@ -52,14 +47,13 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         if (email == null) {
-            throw new UsernameNotFoundException("邮箱不能为空");
+            throw new UsernameNotFoundException("邮箱不能为空！");
         }
-
 
         User user = userService.getOne(new QueryWrapper<User>().eq("email", email));
 
         if (user == null) {
-            throw new UsernameNotFoundException("邮箱或密码错误");
+            throw new UsernameNotFoundException("邮箱或密码错误！");
         }
 
         String password = user.getPassword();
@@ -78,12 +72,19 @@ public class AuthServiceImpl implements AuthService {
      * 4. 在用户注册时，从 Redis 中取出相应的键值对进行验证。
      */
     @Override
-    public String sendCode(String email, String sessionId, boolean hasAccount) {
-        String key = "email:" + sessionId + ":" + email + ":" + hasAccount;
+    public String sendCode(String email, String sessionId, String actionKey) {
+        String key = "email:" + sessionId + ":" + email + ":" + actionKey;
+        Map<String, String> ACTION_MAP = new HashMap<>() {{
+            put("register", "注册");
+            put("reset", "重置密码");
+            put("changeOldEmail", "更换邮箱");
+            put("changeNewEmail", "更换邮箱");
+            put("changePassword", "修改密码");
+        }};
 
         synchronized (emailSessions) {
             if (emailSessions.containsKey(key)) {
-                return "请求频繁，请稍后再试";
+                return "请求频繁，请稍后再试！";
             } else {
                 emailSessions.put(key, "");
             }
@@ -93,25 +94,27 @@ public class AuthServiceImpl implements AuthService {
             Long expire = Optional.ofNullable(redisTemplate.getExpire(key, TimeUnit.SECONDS)).orElse(0L);
 
             if (expire > 120) {
-                return "请求频繁，请稍后再试";
+                return "请求频繁，请稍后再试！";
             }
         }
 
         User user = userService.getOne(new QueryWrapper<User>().eq("email", email));
 
-        if (hasAccount && user == null) {
-            return "该邮箱未注册";
+        if (actionKey.equals("reset") || actionKey.equals("changePassword") || actionKey.equals("changeOldEmail")) {
+            if (user == null) {
+                return "该邮箱未注册";
+            }
         }
 
-        if (!hasAccount && user != null) {
-            return "该邮箱已被注册";
+        if (actionKey.equals("register") || actionKey.equals("changeNewEmail")) {
+            if (user != null) {
+                return "该邮箱已被注册";
+            }
         }
 
         Random random = new Random();
         int code = random.nextInt(900000) + 100000;
-        String text = (hasAccount ? "您正在重置密码，验证码为：" : "您正在注册，验证码为：")
-                + code
-                + "，有效期为三分钟。";
+        String text = ("您正在" + ACTION_MAP.get(actionKey) + "，验证码为：" + code + "，有效期为三分钟。");
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);
@@ -125,7 +128,7 @@ public class AuthServiceImpl implements AuthService {
 
             return null;
         } catch (MailException mailException) {
-            return "验证码发送失败，请联系管理员";
+            return "验证码发送失败，请联系管理员！";
         } finally {
             emailSessions.remove(key);
         }
@@ -139,14 +142,10 @@ public class AuthServiceImpl implements AuthService {
             String val = redisTemplate.opsForValue().get(key);
 
             if (val == null) {
-                return "验证码已过期，请重新请求";
+                redisTemplate.delete(key);
+                return "验证码已过期，请重新请求！";
             } else {
                 if (val.equals(code)) {
-                    User user = userService.getOne(new QueryWrapper<User>().eq("email", email));
-
-                    if (user != null)
-                        return "此邮箱已被注册，请更换邮箱";
-
                     redisTemplate.delete(key);
                     password = passwordEncoder.encode(password);
 
@@ -164,43 +163,44 @@ public class AuthServiceImpl implements AuthService {
                     newUser.setPassword(password);
                     newUser.setStatus(1);
 
-                    if(userService.count() == 0) {
+                    if (userService.count() == 0) {
                         newUser.setRole(2);
                     }
 
                     if (userService.save(newUser)) {
                         return null;
                     } else {
-                        return "服务器内部错误，请联系管理员";
+                        return "服务器内部错误，请联系管理员！";
                     }
                 } else {
-                    return "验证码错误";
+                    return "验证码错误！";
                 }
             }
         } else {
-            return "请先请求一封验证码邮件";
+            return "请先请求一封验证码邮件！";
         }
     }
 
     @Override
-    public String validateCode(String email, String code, String sessionId) {
-        String key = "email:" + sessionId + ":" + email + ":true";
+    public String validateCode(String email, String code, String sessionId, String actionKey) {
+        String key = "email:" + sessionId + ":" + email + ":" + actionKey;
 
         if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
             String val = redisTemplate.opsForValue().get(key);
 
             if (val == null) {
-                return "验证码已过期，请重新请求";
+                redisTemplate.delete(key);
+                return "验证码已过期，请重新请求！";
             } else {
                 if (val.equals(code)) {
                     redisTemplate.delete(key);
                     return null;
                 } else {
-                    return "验证码错误";
+                    return "验证码错误！";
                 }
             }
         } else {
-            return "请先发送一封验证码邮件";
+            return "请先发送一封验证码邮件！";
         }
     }
 
