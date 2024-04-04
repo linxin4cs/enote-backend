@@ -233,7 +233,7 @@ public class UserController {
         }
     }
 
-    @PutMapping("/edit/avatar")
+    @PostMapping("/edit/avatar")
     public ResponseDTO<EditAvatarResponse> editAvatar(@AuthenticationPrincipal UserDetails currentUser, @RequestParam("files") MultipartFile[] files) {
         if (files == null || files.length == 0) {
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.BAD_REQUEST.getCode(), new ResponseDTO.ResponseData<>("请上传文件！", null));

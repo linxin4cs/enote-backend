@@ -14,9 +14,9 @@ public class MyUtils {
     public static class Validator {
         public static String validateEmail(String email) {
             if (email == null || email.isEmpty()) {
-                return "邮箱不能为空";
+                return "邮箱不能为空!";
             } else if (!email.matches("^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\\.[a-zA-Z0-9_-]+)+$")) {
-                return "邮箱格式错误";
+                return "邮箱格式错误!";
             }
 
             return "";
@@ -24,11 +24,11 @@ public class MyUtils {
 
         public static String validatePassword(String password) {
             if (password == null || password.isEmpty()) {
-                return "密码不能为空";
+                return "密码不能为空!";
             } else if (password.length() < 8 || password.length() > 20) {
-                return "密码长度应在8-20位之间";
+                return "密码长度应在8-20位之间!";
             } else if (!password.matches("^[a-zA-Z0-9]+$")) {
-                return "密码只能包含英文和数字";
+                return "密码只能包含英文和数字!";
             }
 
             return "";
@@ -36,14 +36,31 @@ public class MyUtils {
 
         public static String validateName(String name) {
             if (name == null || name.isEmpty()) {
-                return "用户名不能为空";
+                return "用户名不能为空!";
             } else if (name.length() < 2 || name.length() > 16) {
-                return "用户名长度应在2-16位之间";
+                return "用户名长度应在2-16位之间!";
             } else if (!name.matches("^[a-zA-Z0-9\\u4e00-\\u9fa5]+$")) {
-                return "用户名只能包含中文、英文和数字";
+                return "用户名只能包含中文、英文和数字!";
+            }
+
+            return "";
+        }
+
+        public static String validateRole(int role) {
+            if (role != 0 && role != 1) {
+                return "角色只能是 普通用户/管理员!";
+            }
+
+            return "";
+        }
+
+        public static String validateStatus(int status) {
+            if (status != 0 && status != 1) {
+                return "状态只能是 启用/禁用!";
             }
 
             return "";
         }
     }
+
 }

@@ -7,6 +7,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.MailException;
 import org.springframework.mail.MailSender;
 import org.springframework.mail.SimpleMailMessage;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -58,6 +59,11 @@ public class AuthServiceImpl implements AuthService {
 
         String password = user.getPassword();
         String role = ROLE_LIST.get(user.getRole());
+        int status = user.getStatus();
+
+        if (status == 0) {
+            throw new DisabledException("账号已被禁用！");
+        }
 
         return org.springframework.security.core.userdetails.User.withUsername(email)
                 .password(password)
@@ -136,7 +142,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public String register(String password, String email, String code, String sessionId) {
-        String key = "email:" + sessionId + ":" + email + ":false";
+        String key = "email:" + sessionId + ":" + email + ":register";
 
         if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
             String val = redisTemplate.opsForValue().get(key);
@@ -155,7 +161,7 @@ public class AuthServiceImpl implements AuthService {
                     String name;
 
                     do {
-                        name = "user_" + generateRandomString(8);
+                        name = "user" + generateRandomString(8);
 
                     } while (userService.getOne(new QueryWrapper<User>().eq("name", name)) != null);
 
