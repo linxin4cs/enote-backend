@@ -12,8 +12,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import sit.zlx.enotebackend.domain.ActiveUser;
 import sit.zlx.enotebackend.domain.File;
 import sit.zlx.enotebackend.domain.PersistentLogins;
 import sit.zlx.enotebackend.domain.User;
@@ -21,7 +23,6 @@ import sit.zlx.enotebackend.dto.RequestDTO;
 import sit.zlx.enotebackend.dto.ResponseDTO;
 import sit.zlx.enotebackend.dto.UserDTO;
 import sit.zlx.enotebackend.service.*;
-import sit.zlx.enotebackend.service.impl.AuthServiceImpl;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -32,20 +33,24 @@ import static sit.zlx.enotebackend.controller.AuthController.returnSendCodeResul
 @RequestMapping("/api/user")
 public class UserController {
 
+    private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final UserService userService;
     private final AuthService authService;
     private final UploadService uploadService;
     private final FileService fileService;
+    private final ActiveUserService activeUserService;
     private final PersistentLoginsService persistentLoginsService;
 
 
     @Autowired
-    public UserController(UserService userService, AuthService authService, UploadService uploadService, FileService fileService, PersistentLoginsService persistentLoginsService) {
+    public UserController(UserService userService, AuthService authService, UploadService uploadService, FileService fileService, PersistentLoginsService persistentLoginsService, ActiveUserService activeUserService) {
         this.userService = userService;
         this.authService = authService;
         this.uploadService = uploadService;
         this.fileService = fileService;
         this.persistentLoginsService = persistentLoginsService;
+        this.activeUserService = activeUserService;
+
     }
 
     @GetMapping("/me")
@@ -53,6 +58,16 @@ public class UserController {
         try {
             QueryWrapper<User> queryWrapper = new QueryWrapper<User>().eq("email", currentUser.getUsername());
             User user = userService.getOne(queryWrapper);
+
+            if (user == null) {
+                return new ResponseDTO<>(ResponseDTO.STATUS_CODE.UNAUTHORIZED.getCode(), new ResponseDTO.ResponseData<>("未登录！", null));
+            }
+
+            if (activeUserService.getOne(new QueryWrapper<ActiveUser>().eq("userId", user.getId())) == null) {
+                ActiveUser activeUser = new ActiveUser();
+                activeUser.setUserId(user.getId());
+                activeUserService.save(activeUser);
+            }
 
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.SUCCESS.getCode(), new ResponseDTO.ResponseData<>("获取成功！", UserDTO.toDTO(user)));
         } catch (Exception e) {
@@ -205,7 +220,7 @@ public class UserController {
 
             if (result == null) {
                 User originalUser = userService.getOne(new QueryWrapper<User>().eq("email", currentUser.getUsername()));
-                String newPassword = AuthServiceImpl.passwordEncoder.encode(password);
+                String newPassword = passwordEncoder.encode(password);
                 originalUser.setPassword(newPassword);
                 userService.updateById(originalUser);
 
@@ -243,8 +258,10 @@ public class UserController {
             User user = userService.getOne(new QueryWrapper<User>().eq("email", currentUser.getUsername()));
             if (user.getAvatar() != null) {
                 File oldFile = fileService.getOne(new QueryWrapper<File>().eq("id", user.getAvatar().split("/")[4]));
-                Files.delete(Paths.get(oldFile.getPath()));
-                fileService.removeById(oldFile.getId());
+                if (oldFile != null) {
+                    Files.deleteIfExists(Paths.get(oldFile.getPath()));
+                    fileService.removeById(oldFile.getId());
+                }
             }
 
             File file = uploadService.storeFile(files[0], UploadService.FILE_TYPE.IMAGE, user.getId());
