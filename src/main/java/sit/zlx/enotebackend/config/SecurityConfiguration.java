@@ -122,10 +122,17 @@ public class SecurityConfiguration {
     }
 
     private void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException e) throws IOException {
-        String message = Objects.equals(e.getMessage(), "用户名或密码错误") ? "邮箱或密码错误" : e.getMessage();
+        String message = e.getMessage();
 
         response.setCharacterEncoding("UTF-8");
         response.setHeader("Content-Type", "application/json;");
+
+        if (Objects.equals(message, "Full authentication is required to access this resource")) {
+            message = "未授权访问！";
+        } else if (Objects.equals(e.getMessage(), "用户名或密码错误")) {
+            message = "邮箱或密码错误";
+        }
+
         response.getWriter().write(JSONObject.toJSONString(new ResponseDTO<>(ResponseDTO.STATUS_CODE.UNAUTHORIZED.getCode(), new ResponseDTO.ResponseData<>(message, null))));
     }
 }

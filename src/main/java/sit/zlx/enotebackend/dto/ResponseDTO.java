@@ -15,7 +15,6 @@ public class ResponseDTO<T> {
     @AllArgsConstructor
     public enum STATUS_CODE {
         SUCCESS(200, "操作成功"),
-        CREATED(201, "资源创建成功"),
         BAD_REQUEST(400, "错误的请求"),
         UNAUTHORIZED(401, "未授权"),
         FORBIDDEN(403, "禁止访问"),

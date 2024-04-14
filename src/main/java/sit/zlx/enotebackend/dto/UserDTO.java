@@ -13,7 +13,7 @@ import java.util.Date;
 @AllArgsConstructor
 @Builder
 public class UserDTO {
-    private Integer id;
+    private String id;
     private String email;
     private String name;
     private Object status;

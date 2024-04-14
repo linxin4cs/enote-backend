@@ -26,7 +26,7 @@ public class AuthorizeInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(@NotNull HttpServletRequest request,
                              @NotNull HttpServletResponse response,
-                             @NotNull Object handler) throws Exception {
+                             @NotNull Object handler) {
 
         SecurityContext context = SecurityContextHolder.getContext();
         Authentication authentication = context.getAuthentication();
@@ -36,6 +36,11 @@ public class AuthorizeInterceptor implements HandlerInterceptor {
         String email = userDetails.getUsername();
 
         User user = userService.getOne(new QueryWrapper<User>().eq("email", email));
+
+        if (user == null) {
+            request.getSession().removeAttribute("user");
+            return true;
+        }
 
         UserDTO userDTO = UserDTO.toDTO(user);
         request.getSession().setAttribute("user", userDTO);

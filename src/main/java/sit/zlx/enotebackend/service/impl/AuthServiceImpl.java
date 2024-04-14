@@ -7,6 +7,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.MailException;
 import org.springframework.mail.MailSender;
 import org.springframework.mail.SimpleMailMessage;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -16,10 +17,7 @@ import sit.zlx.enotebackend.domain.User;
 import sit.zlx.enotebackend.service.AuthService;
 import sit.zlx.enotebackend.service.UserService;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static sit.zlx.enotebackend.service.MyUtils.generateRandomString;
@@ -29,10 +27,10 @@ import static sit.zlx.enotebackend.service.impl.UserServiceImpl.ROLE_LIST;
 @Service
 public class AuthServiceImpl implements AuthService {
 
+    private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final UserService userService;
     private final MailSender mailSender;
     private final StringRedisTemplate redisTemplate;
-    public static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final HashMap<String, String> emailSessions = new HashMap<String, String>();
     @Value("${spring.mail.properties.from}")
     private String from;
@@ -55,6 +53,10 @@ public class AuthServiceImpl implements AuthService {
 
         if (user == null) {
             throw new UsernameNotFoundException("邮箱或密码错误！");
+        }
+
+        if (user.getIsDeleting() == 1) {
+            throw new AccessDeniedException("未授权访问！");
         }
 
         String password = user.getPassword();
@@ -114,6 +116,9 @@ public class AuthServiceImpl implements AuthService {
 
         if (actionKey.equals("register") || actionKey.equals("changeNewEmail")) {
             if (user != null) {
+                if (user.getIsDeleting() == 1)
+                    return "请等待用户数据删除完成！";
+
                 return "该邮箱已被注册";
             }
         }
@@ -156,6 +161,7 @@ public class AuthServiceImpl implements AuthService {
                     password = passwordEncoder.encode(password);
 
                     User newUser = new User();
+                    newUser.setId(UUID.randomUUID().toString());
                     newUser.setEmail(email);
 
                     String name;

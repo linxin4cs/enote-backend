@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 /**
 * @author linxin4cs
 * @description 针对表【file】的数据库操作Service
-* @createDate 2024-04-03 02:27:40
+* @createDate 2024-04-07 18:00:28
 */
 public interface FileService extends IService<File> {
 

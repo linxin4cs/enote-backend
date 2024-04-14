@@ -25,7 +25,13 @@ public class File implements Serializable {
      * 
      */
     @TableField(value = "userId")
-    private Integer userId;
+    private String userId;
+
+    /**
+     * 
+     */
+    @TableField(value = "noteId")
+    private String noteId;
 
     /**
      * 
@@ -80,6 +86,7 @@ public class File implements Serializable {
         File other = (File) that;
         return (this.getId() == null ? other.getId() == null : this.getId().equals(other.getId()))
             && (this.getUserId() == null ? other.getUserId() == null : this.getUserId().equals(other.getUserId()))
+            && (this.getNoteId() == null ? other.getNoteId() == null : this.getNoteId().equals(other.getNoteId()))
             && (this.getType() == null ? other.getType() == null : this.getType().equals(other.getType()))
             && (this.getName() == null ? other.getName() == null : this.getName().equals(other.getName()))
             && (this.getPath() == null ? other.getPath() == null : this.getPath().equals(other.getPath()))
@@ -94,6 +101,7 @@ public class File implements Serializable {
         int result = 1;
         result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
         result = prime * result + ((getUserId() == null) ? 0 : getUserId().hashCode());
+        result = prime * result + ((getNoteId() == null) ? 0 : getNoteId().hashCode());
         result = prime * result + ((getType() == null) ? 0 : getType().hashCode());
         result = prime * result + ((getName() == null) ? 0 : getName().hashCode());
         result = prime * result + ((getPath() == null) ? 0 : getPath().hashCode());
@@ -111,6 +119,7 @@ public class File implements Serializable {
         sb.append("Hash = ").append(hashCode());
         sb.append(", id=").append(id);
         sb.append(", userId=").append(userId);
+        sb.append(", noteId=").append(noteId);
         sb.append(", type=").append(type);
         sb.append(", name=").append(name);
         sb.append(", path=").append(path);

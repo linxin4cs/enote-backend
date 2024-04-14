@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sit.zlx.enotebackend.mapper.ActiveUserMapper">
+
+    <resultMap id="BaseResultMap" type="sit.zlx.enotebackend.domain.ActiveUser">
+            <result property="userId" column="userId" jdbcType="VARCHAR"/>
+            <result property="loginDate" column="loginDate" jdbcType="DATE"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        userId,loginDate
+    </sql>
+</mapper>

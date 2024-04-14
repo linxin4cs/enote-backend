@@ -18,8 +18,8 @@ public class User implements Serializable {
     /**
      * 
      */
-    @TableId(value = "id", type = IdType.AUTO)
-    private Integer id;
+    @TableId(value = "id")
+    private String id;
 
     /**
      * 
@@ -63,6 +63,12 @@ public class User implements Serializable {
     @TableField(value = "avatar")
     private String avatar;
 
+    /**
+     * 
+     */
+    @TableField(value = "isDeleting")
+    private Integer isDeleting;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 
@@ -85,7 +91,8 @@ public class User implements Serializable {
             && (this.getStatus() == null ? other.getStatus() == null : this.getStatus().equals(other.getStatus()))
             && (this.getRole() == null ? other.getRole() == null : this.getRole().equals(other.getRole()))
             && (this.getCreatedAt() == null ? other.getCreatedAt() == null : this.getCreatedAt().equals(other.getCreatedAt()))
-            && (this.getAvatar() == null ? other.getAvatar() == null : this.getAvatar().equals(other.getAvatar()));
+            && (this.getAvatar() == null ? other.getAvatar() == null : this.getAvatar().equals(other.getAvatar()))
+            && (this.getIsDeleting() == null ? other.getIsDeleting() == null : this.getIsDeleting().equals(other.getIsDeleting()));
     }
 
     @Override
@@ -100,6 +107,7 @@ public class User implements Serializable {
         result = prime * result + ((getRole() == null) ? 0 : getRole().hashCode());
         result = prime * result + ((getCreatedAt() == null) ? 0 : getCreatedAt().hashCode());
         result = prime * result + ((getAvatar() == null) ? 0 : getAvatar().hashCode());
+        result = prime * result + ((getIsDeleting() == null) ? 0 : getIsDeleting().hashCode());
         return result;
     }
 
@@ -117,6 +125,7 @@ public class User implements Serializable {
         sb.append(", role=").append(role);
         sb.append(", createdAt=").append(createdAt);
         sb.append(", avatar=").append(avatar);
+        sb.append(", isDeleting=").append(isDeleting);
         sb.append(", serialVersionUID=").append(serialVersionUID);
         sb.append("]");
         return sb.toString();

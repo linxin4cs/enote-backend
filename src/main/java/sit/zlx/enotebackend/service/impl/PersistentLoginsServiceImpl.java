@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 /**
 * @author linxin4cs
 * @description 针对表【persistent_logins】的数据库操作Service实现
-* @createDate 2024-04-03 02:41:12
+* @createDate 2024-04-06 03:20:59
 */
 @Service
 public class PersistentLoginsServiceImpl extends ServiceImpl<PersistentLoginsMapper, PersistentLogins>

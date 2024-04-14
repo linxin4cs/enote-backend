@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 /**
 * @author linxin4cs
 * @description 针对表【file】的数据库操作Service实现
-* @createDate 2024-04-03 02:27:40
+* @createDate 2024-04-07 18:00:28
 */
 @Service
 public class FileServiceImpl extends ServiceImpl<FileMapper, File>
