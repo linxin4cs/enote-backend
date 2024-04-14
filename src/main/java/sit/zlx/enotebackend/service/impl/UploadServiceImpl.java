@@ -26,7 +26,7 @@ public class UploadServiceImpl implements UploadService {
 
 
     @Override
-    public File storeFile(MultipartFile multipartFile, FILE_TYPE fileType, int userId) throws Exception {
+    public File storeFile(MultipartFile multipartFile, FILE_TYPE fileType, String userId) throws Exception {
         String contentType = multipartFile.getContentType();
         if (isDisallowedContentType(contentType, fileType)) {
             throw new Exception("不允许上传的文件类型");

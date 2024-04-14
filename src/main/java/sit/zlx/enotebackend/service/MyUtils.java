@@ -1,14 +1,23 @@
 package sit.zlx.enotebackend.service;
 
-import java.security.SecureRandom;
-import java.util.Base64;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
 
 public class MyUtils {
     public static String generateRandomString(int length) {
-        SecureRandom random = new SecureRandom();
-        byte[] bytes = new byte[length];
-        random.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder result = new StringBuilder();
+        Random random = new Random();
+
+        for (int i = 0; i < length; i++) {
+            int index = random.nextInt(characters.length()); // 生成一个随机索引
+            char randomChar = characters.charAt(index); // 通过索引获取字符
+            result.append(randomChar); // 将字符追加到最终字符串
+        }
+
+        return result.toString();
     }
 
     public static class Validator {
@@ -63,4 +72,46 @@ public class MyUtils {
         }
     }
 
+    public static class Time {
+        public static Date getTodayZero() {
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), 0, 0, 0);
+            return calendar.getTime();
+        }
+
+        public static Date getYesterdayZero() {
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH) - 1, 0, 0, 0);
+            return calendar.getTime();
+        }
+
+        public static Date getLastWeekZero() {
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH) - 7, 0, 0, 0);
+            return calendar.getTime();
+        }
+    }
+
+    public static class File {
+        public static String convertRawSize(Long rawSize) {
+            String[] units = {"B", "KB", "MB", "GB", "TB"};
+            int index = 0;
+            double size = rawSize.doubleValue();
+
+            while (size >= 1024 && index < units.length - 1) {
+                size /= 1024;
+                index++;
+            }
+
+            return String.format("%.2f %s", size, units[index]);
+        }
+
+        public static String sumItemSize(List<Long> itemRawSize) {
+            Long sum = 0L;
+            for (Long rawSize : itemRawSize) {
+                sum += rawSize;
+            }
+            return convertRawSize(sum);
+        }
+    }
 }
