@@ -1,8 +1,6 @@
 package sit.zlx.enotebackend.domain;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 import lombok.Data;
@@ -13,7 +11,7 @@ import lombok.Data;
  */
 @TableName(value ="noteTag")
 @Data
-public class Notetag implements Serializable {
+public class NoteTag implements Serializable {
     /**
      * 
      */
@@ -40,7 +38,7 @@ public class Notetag implements Serializable {
         if (getClass() != that.getClass()) {
             return false;
         }
-        Notetag other = (Notetag) that;
+        NoteTag other = (NoteTag) that;
         return (this.getNoteId() == null ? other.getNoteId() == null : this.getNoteId().equals(other.getNoteId()))
             && (this.getTagId() == null ? other.getTagId() == null : this.getTagId().equals(other.getTagId()));
     }

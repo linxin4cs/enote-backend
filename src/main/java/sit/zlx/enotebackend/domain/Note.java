@@ -51,6 +51,18 @@ public class Note implements Serializable {
     @TableField(value = "status")
     private Integer status;
 
+    /**
+     * 
+     */
+    @TableField(value = "stared")
+    private Integer stared;
+
+    /**
+     * 
+     */
+    @TableField(value = "isDeleting")
+    private Integer isDeleting;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 
@@ -71,7 +83,9 @@ public class Note implements Serializable {
             && (this.getTitle() == null ? other.getTitle() == null : this.getTitle().equals(other.getTitle()))
             && (this.getCreatedAt() == null ? other.getCreatedAt() == null : this.getCreatedAt().equals(other.getCreatedAt()))
             && (this.getFolderId() == null ? other.getFolderId() == null : this.getFolderId().equals(other.getFolderId()))
-            && (this.getStatus() == null ? other.getStatus() == null : this.getStatus().equals(other.getStatus()));
+            && (this.getStatus() == null ? other.getStatus() == null : this.getStatus().equals(other.getStatus()))
+            && (this.getStared() == null ? other.getStared() == null : this.getStared().equals(other.getStared()))
+            && (this.getIsDeleting() == null ? other.getIsDeleting() == null : this.getIsDeleting().equals(other.getIsDeleting()));
     }
 
     @Override
@@ -84,6 +98,8 @@ public class Note implements Serializable {
         result = prime * result + ((getCreatedAt() == null) ? 0 : getCreatedAt().hashCode());
         result = prime * result + ((getFolderId() == null) ? 0 : getFolderId().hashCode());
         result = prime * result + ((getStatus() == null) ? 0 : getStatus().hashCode());
+        result = prime * result + ((getStared() == null) ? 0 : getStared().hashCode());
+        result = prime * result + ((getIsDeleting() == null) ? 0 : getIsDeleting().hashCode());
         return result;
     }
 
@@ -99,6 +115,8 @@ public class Note implements Serializable {
         sb.append(", createdAt=").append(createdAt);
         sb.append(", folderId=").append(folderId);
         sb.append(", status=").append(status);
+        sb.append(", stared=").append(stared);
+        sb.append(", isDeleting=").append(isDeleting);
         sb.append(", serialVersionUID=").append(serialVersionUID);
         sb.append("]");
         return sb.toString();

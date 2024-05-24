@@ -23,6 +23,8 @@ spring:
       host: localhost
       port: 6379
       password: 123456
+    mongodb:
+      uri: mongodb://localhost:27017/enote
 
   mail:
     host: smtp.163.com
@@ -35,6 +37,12 @@ spring:
       # 开启debug模式，这样邮件发送过程的日志会在控制台打印出来，方便排查错误
       # debug: true
 
+mybatis-plus:
+  global-config:
+    db-config:
+      update-strategy: ignored
+
 logging:
   level:
-    org.springframework.security: DEBUG
+    org.springframework.security: ERROR
+    org.apache.catalina.connector: ERROR

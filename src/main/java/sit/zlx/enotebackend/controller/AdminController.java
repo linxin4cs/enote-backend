@@ -4,15 +4,18 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import sit.zlx.enotebackend.controller.user.UserStatisticsController;
 import sit.zlx.enotebackend.domain.ActiveNote;
 import sit.zlx.enotebackend.domain.ActiveUser;
 import sit.zlx.enotebackend.domain.File;
@@ -22,14 +25,13 @@ import sit.zlx.enotebackend.dto.RequestDTO;
 import sit.zlx.enotebackend.dto.ResponseDTO;
 import sit.zlx.enotebackend.dto.UserDTO;
 import sit.zlx.enotebackend.service.*;
+import sit.zlx.enotebackend.service.MyUtils.UsageBody;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 import static sit.zlx.enotebackend.service.MyUtils.generateRandomString;
+import static sit.zlx.enotebackend.service.MyUtils.getUsageSize;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -42,20 +44,28 @@ public class AdminController {
     private final ActiveNoteService activeNoteService;
     private final FileService fileService;
     private final AdminService adminService;
+    private final MongoTemplate mongoTemplate;
 
 
     @Autowired
-    AdminController(UserService userService, NoteService noteService, ActiveUserService activeUserService, ActiveNoteService activeNoteService, FileService fileService, AdminService adminService) {
+    AdminController(
+            UserService userService,
+            NoteService noteService,
+            ActiveUserService activeUserService,
+            ActiveNoteService activeNoteService,
+            FileService fileService, AdminService adminService,
+            MongoTemplate mongoTemplate
+    ) {
         this.userService = userService;
         this.noteService = noteService;
         this.activeUserService = activeUserService;
         this.activeNoteService = activeNoteService;
         this.fileService = fileService;
         this.adminService = adminService;
+        this.mongoTemplate = mongoTemplate;
     }
 
-    @NotNull
-    private static QueryWrapper<User> getUserQueryWrapper(ListUsersBody.Query searchParams) {
+    private static QueryWrapper<User> getUsersQueryWrapper(ListUsersBody.Query searchParams) {
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.orderByDesc("createdAt");
 
@@ -65,8 +75,9 @@ public class AdminController {
         // 根据搜索参数构建查询条件
         if (searchParams != null) {
             if (searchParams.getKeyword() != null) {
-                queryWrapper.and(wrapper -> wrapper.like("id", searchParams.getKeyword()).or().like("name", searchParams.getKeyword()).or().like("email", searchParams.getKeyword()));
+                queryWrapper.and(wrapper -> wrapper.like("LOWER(id)", searchParams.getKeyword().toLowerCase()).or().like("LOWER(name)", searchParams.getKeyword().toLowerCase()).or().like("LOWER(email)", searchParams.getKeyword().toLowerCase()));
             }
+
 
             // 添加基于日期范围的搜索条件
             if (searchParams.getCreatedAtStart() != null) {
@@ -76,6 +87,7 @@ public class AdminController {
                 queryWrapper.le("createdAt", searchParams.getCreatedAtEnd()); // le 是 "less than or equal to" 的缩写
             }
         }
+
 
         return queryWrapper;
     }
@@ -90,7 +102,7 @@ public class AdminController {
 
             Page<User> pageObj = new Page<>(page, size);
 
-            QueryWrapper<User> queryWrapper = getUserQueryWrapper(searchParams);
+            QueryWrapper<User> queryWrapper = getUsersQueryWrapper(searchParams);
 
             IPage<User> userPage = userService.page(pageObj, queryWrapper);
             List<User> users = userPage.getRecords();
@@ -101,7 +113,6 @@ public class AdminController {
         } catch (Exception e) {
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.INTERNAL_SERVER_ERROR.getCode(), new ResponseDTO.ResponseData<>("获取用户列表失败！", null));
         }
-
     }
 
     @PostMapping("/manage/user/edit")
@@ -138,8 +149,8 @@ public class AdminController {
         }
 
         try {
-            targetUser.setEmail(requestDTO.getData().getNewEmail());
-            targetUser.setName(requestDTO.getData().getNewName());
+            targetUser.setEmail(requestDTO.getData().getNewEmail().trim());
+            targetUser.setName(requestDTO.getData().getNewName().trim());
             targetUser.setRole(requestDTO.getData().getNewRole());
             targetUser.setStatus(requestDTO.getData().getNewStatus());
             userService.updateById(targetUser);
@@ -173,7 +184,7 @@ public class AdminController {
             } while (userService.getOne(new QueryWrapper<User>().eq("name", name)) != null);
 
             newUser.setId(UUID.randomUUID().toString());
-            newUser.setEmail(email);
+            newUser.setEmail(email.trim());
             newUser.setName(name);
             newUser.setPassword(passwordEncoder.encode("enotepwd"));
             newUser.setStatus(0);
@@ -211,12 +222,59 @@ public class AdminController {
         try {
             // 先将用户的isDeleting字段设置为true，然后异步删除用户的文件和相关记录
             userService.update(new UpdateWrapper<User>().set("isDeleting", 1).in("id", ids));
-            adminService.deleteUserFiles(ids);
-            adminService.deleteUserRelatedRecords(ids);
+            adminService.deleteUserData(ids);
 
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.SUCCESS.getCode(), new ResponseDTO.ResponseData<>("删除用户成功！", null));
         } catch (Exception e) {
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.INTERNAL_SERVER_ERROR.getCode(), new ResponseDTO.ResponseData<>("删除用户失败！", null));
+        }
+    }
+
+    @PostMapping("/manage/user/usage")
+    public ResponseDTO<UsageBody> singleUsage(@RequestBody RequestDTO<UserIdBody> requestDTO) {
+        try {
+            String userId = requestDTO.getData().getUserId();
+
+            UsageBody.Size totalSize = new UsageBody.Size();
+
+            List<String> noteIds = noteService.list(new QueryWrapper<sit.zlx.enotebackend.domain.Note>().eq("userId", userId).select("id")).stream().map(sit.zlx.enotebackend.domain.Note::getId).toList();
+
+            Aggregation aggregation = Aggregation.newAggregation(
+                    Aggregation.match(Criteria.where("_id").is(noteIds)),
+                    Aggregation.project().andExclude("_id")
+                            .andExpression("{ $bsonSize: '$$ROOT' }").as("tempSize"),
+                    Aggregation.group().sum("tempSize").as("size")
+            );
+
+            AggregationResults<UserStatisticsController.DocumentSize> results = mongoTemplate.aggregate(aggregation, "note", UserStatisticsController.DocumentSize.class);
+            UserStatisticsController.DocumentSize documentTotalSize = results.getUniqueMappedResult();
+
+            long noteTotalSize = 0L;
+            if (documentTotalSize != null) {
+                noteTotalSize = documentTotalSize.getSize();
+            }
+            String noteParsedTotalSize = MyUtils.File.convertRawSize(noteTotalSize);
+
+            UsageBody.Size noteSize = getUsageSize(totalSize, List.of(noteTotalSize), noteParsedTotalSize);
+
+            List<Long> imageSizes = fileService.list(new QueryWrapper<File>().eq("type", "image").eq("userId", userId).select("size")).stream().map(File::getSize).toList();
+            List<Long> videoSizes = fileService.list(new QueryWrapper<File>().eq("type", "video").eq("userId", userId).select("size")).stream().map(File::getSize).toList();
+            List<Long> audioSizes = fileService.list(new QueryWrapper<File>().eq("type", "audio").eq("userId", userId).select("size")).stream().map(File::getSize).toList();
+            String imageParsedTotalSize = MyUtils.File.sumItemSize(imageSizes);
+            String videoParsedTotalSize = MyUtils.File.sumItemSize(videoSizes);
+            String audioParsedTotalSize = MyUtils.File.sumItemSize(audioSizes);
+
+            UsageBody.Size imageSize = getUsageSize(totalSize, imageSizes, imageParsedTotalSize);
+            UsageBody.Size videoSize = getUsageSize(totalSize, videoSizes, videoParsedTotalSize);
+            UsageBody.Size audioSize = getUsageSize(totalSize, audioSizes, audioParsedTotalSize);
+
+            totalSize.setParsedSize(MyUtils.File.convertRawSize(totalSize.getRawSize()));
+            UsageBody usageBody = new UsageBody(totalSize, noteSize, imageSize, videoSize, audioSize);
+
+            return new ResponseDTO<>(ResponseDTO.STATUS_CODE.SUCCESS.getCode(), new ResponseDTO.ResponseData<>("获取使用情况成功！", usageBody));
+        } catch (Exception e) {
+//           
+            return new ResponseDTO<>(ResponseDTO.STATUS_CODE.INTERNAL_SERVER_ERROR.getCode(), new ResponseDTO.ResponseData<>("获取使用情况失败！", null));
         }
     }
 
@@ -253,6 +311,7 @@ public class AdminController {
 
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.SUCCESS.getCode(), new ResponseDTO.ResponseData<>("获取用户日新增数成功！", dashBoardCardBody));
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.INTERNAL_SERVER_ERROR.getCode(), new ResponseDTO.ResponseData<>("获取用户日新增数失败！", null));
         }
     }
@@ -263,18 +322,23 @@ public class AdminController {
             BarChartDataBody barChartDataBody = new BarChartDataBody();
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             Date lastWeekZero = MyUtils.Time.getLastWeekZero();
-            // 获取过去7天的数据，如果那一天没有数据，也要加到返回结果中，如果有数据，但是为0，也要加到返回结果中
-            List<BarChartDataBody.BarChartDataItem> data = new java.util.ArrayList<>(userService.list(new QueryWrapper<User>().select("createdAt")).stream().map(User::getCreatedAt).filter(Objects::nonNull).filter(date -> date.after(lastWeekZero)).map(sdf::format).distinct().map(date -> {
-                String nextDayZero = date.substring(0, 8) + (Integer.parseInt(date.substring(8)) + 1);
-                BarChartDataBody.BarChartDataItem item = new BarChartDataBody.BarChartDataItem();
-                item.setDate(date.substring(5).replace("-", "/"));
-                item.setNum(userService.count(new QueryWrapper<User>().between("createdAt", date, nextDayZero)));
-                return item;
-            }).toList());
+// 获取过去7天的数据，如果那一天没有数据，也要加到返回结果中，如果有数据，但是为0，也要加到返回结果中
+            List<BarChartDataBody.BarChartDataItem> data =
+                    new ArrayList<>(userService.list(
+                                    new QueryWrapper<User>().select("createdAt"))
+                            .stream().map(User::getCreatedAt)
+                            .filter(Objects::nonNull).filter(date -> date.after(lastWeekZero)).
+                            map(sdf::format)
+                            .distinct()
+                            .map(date -> {
+                                String nextDayZero = date.substring(0, 8) + (Integer.parseInt(date.substring(8)) + 1);
+                                BarChartDataBody.BarChartDataItem item = new BarChartDataBody.BarChartDataItem();
+                                item.setDate(date.substring(5).replace("-", "/"));
+                                item.setNum(userService.count(new QueryWrapper<User>().between("createdAt", date, nextDayZero)));
+                                return item;
+                            }).toList());
 
-            // 补全过去7天（包括今天）的数据
             adminService.formatAndSortBarChartData(barChartDataBody, sdf, data);
-
 
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.SUCCESS.getCode(), new ResponseDTO.ResponseData<>("获取用户周新增数成功！", barChartDataBody));
         } catch (Exception e) {
@@ -314,7 +378,7 @@ public class AdminController {
             List<BarChartDataBody.BarChartDataItem> data = new java.util.ArrayList<>(activeUserService.list(new QueryWrapper<ActiveUser>().select("loginDate")).stream().map(ActiveUser::getLoginDate).filter(Objects::nonNull).filter(date -> date.after(lastWeek)).map(sdf::format).distinct().map(date -> {
                 BarChartDataBody.BarChartDataItem item = new BarChartDataBody.BarChartDataItem();
                 item.setDate(date.substring(5).replace("-", "/"));
-                item.setNum(activeUserService.count(new QueryWrapper<ActiveUser>().eq("loginDate", date).eq("isDeleting", 0)));
+                item.setNum(activeUserService.count(new QueryWrapper<ActiveUser>().eq("loginDate", date)));
                 return item;
             }).toList());
 
@@ -324,7 +388,7 @@ public class AdminController {
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.SUCCESS.getCode(), new ResponseDTO.ResponseData<>("获取用户周活跃数成功！", barChartDataBody));
 
         } catch (Exception e) {
-
+            System.out.println(e.getMessage());
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.INTERNAL_SERVER_ERROR.getCode(), new ResponseDTO.ResponseData<>("获取用户周活跃数失败！", null));
         }
 
@@ -391,10 +455,11 @@ public class AdminController {
         try {
             DashBoardCardBody dashBoardCardBody = new DashBoardCardBody();
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            // 今天日期，格式为 yyyy-MM-dd
             String today = sdf.format(new Date());
             String yesterday = sdf.format(new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000));
-            Long newNum = activeNoteService.count(new QueryWrapper<ActiveNote>().eq("lastModifiedTime", today));
-            Long oldNum = activeNoteService.count(new QueryWrapper<ActiveNote>().eq("lastModifiedTime", yesterday));
+            Long newNum = activeNoteService.count(new QueryWrapper<ActiveNote>().eq("modifiedDate", today));
+            Long oldNum = activeNoteService.count(new QueryWrapper<ActiveNote>().eq("modifiedDate", yesterday));
             dashBoardCardBody.setNum(newNum);
             dashBoardCardBody.setPercentValue(oldNum, newNum);
 
@@ -412,10 +477,10 @@ public class AdminController {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             Date lastWeek = new Date(System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000);
             // 获取过去7天的数据，如果那一天没有数据，也要加到返回结果中，如果有数据，但是为0，也要加到返回结果中
-            List<BarChartDataBody.BarChartDataItem> data = new java.util.ArrayList<>(activeNoteService.list(new QueryWrapper<ActiveNote>().select("lastModifiedTime")).stream().map(ActiveNote::getLastModifiedTime).filter(Objects::nonNull).filter(date -> date.after(lastWeek)).map(sdf::format).distinct().map(date -> {
+            List<BarChartDataBody.BarChartDataItem> data = new java.util.ArrayList<>(activeNoteService.list(new QueryWrapper<ActiveNote>().select("modifiedDate")).stream().map(ActiveNote::getModifiedDate).filter(Objects::nonNull).filter(date -> date.after(lastWeek)).map(sdf::format).distinct().map(date -> {
                 BarChartDataBody.BarChartDataItem item = new BarChartDataBody.BarChartDataItem();
                 item.setDate(date.substring(5).replace("-", "/"));
-                item.setNum(activeUserService.count(new QueryWrapper<ActiveUser>().eq("loginDate", date)));
+                item.setNum(activeNoteService.count(new QueryWrapper<ActiveNote>().eq("modifiedDate", date)));
                 return item;
             }).toList());
 
@@ -425,7 +490,7 @@ public class AdminController {
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.SUCCESS.getCode(), new ResponseDTO.ResponseData<>("获取用户周活跃数成功！", barChartDataBody));
 
         } catch (Exception e) {
-
+//           
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.INTERNAL_SERVER_ERROR.getCode(), new ResponseDTO.ResponseData<>("获取用户周活跃数失败！", null));
         }
     }
@@ -482,10 +547,24 @@ public class AdminController {
     public ResponseDTO<UsageBody> usage() {
         try {
             UsageBody.Size totalSize = new UsageBody.Size();
-            UsageBody.Size noteSize = new UsageBody.Size();
 
-            noteSize.setParsedSize("100.00 MB");
-            noteSize.setRawSize((long) (100 * 1024 * 1024));
+            Aggregation aggregation = Aggregation.newAggregation(
+                    Aggregation.project().andExpression("{ $bsonSize: '$$ROOT' }").as("tempSize"),
+                    Aggregation.group().sum("tempSize").as("size")
+            );
+
+            AggregationResults<UserStatisticsController.DocumentSize> results = mongoTemplate.aggregate(aggregation, "note", UserStatisticsController.DocumentSize.class);
+            UserStatisticsController.DocumentSize documentTotalSize = results.getUniqueMappedResult();
+
+            System.out.println(results.getMappedResults());
+
+            long noteTotalSize = 0L;
+            if (documentTotalSize != null) {
+                noteTotalSize = documentTotalSize.getSize();
+            }
+            String noteParsedTotalSize = MyUtils.File.convertRawSize(noteTotalSize);
+
+            UsageBody.Size noteSize = getUsageSize(totalSize, List.of(noteTotalSize), noteParsedTotalSize);
 
             List<Long> imageSizes = fileService.list(new QueryWrapper<File>().eq("type", "image").select("size")).stream().map(File::getSize).toList();
             List<Long> videoSizes = fileService.list(new QueryWrapper<File>().eq("type", "video").select("size")).stream().map(File::getSize).toList();
@@ -494,9 +573,9 @@ public class AdminController {
             String videoParsedTotalSize = MyUtils.File.sumItemSize(videoSizes);
             String audioParsedTotalSize = MyUtils.File.sumItemSize(audioSizes);
 
-            UsageBody.Size imageSize = adminService.getUsageSize(totalSize, imageSizes, imageParsedTotalSize);
-            UsageBody.Size videoSize = adminService.getUsageSize(totalSize, videoSizes, videoParsedTotalSize);
-            UsageBody.Size audioSize = adminService.getUsageSize(totalSize, audioSizes, audioParsedTotalSize);
+            UsageBody.Size imageSize = MyUtils.getUsageSize(totalSize, imageSizes, imageParsedTotalSize);
+            UsageBody.Size videoSize = MyUtils.getUsageSize(totalSize, videoSizes, videoParsedTotalSize);
+            UsageBody.Size audioSize = MyUtils.getUsageSize(totalSize, audioSizes, audioParsedTotalSize);
 
             totalSize.setParsedSize(MyUtils.File.convertRawSize(totalSize.getRawSize()));
             UsageBody usageBody = new UsageBody(totalSize, noteSize, imageSize, videoSize, audioSize);
@@ -570,24 +649,6 @@ public class AdminController {
 
     @Data
     @NoArgsConstructor
-    @AllArgsConstructor
-    public static class UsageBody {
-        private Size total;
-        private Size note;
-        private Size image;
-        private Size video;
-        private Size audio;
-
-        @Data
-        @NoArgsConstructor
-        public static class Size {
-            private String parsedSize;
-            private Long rawSize;
-        }
-    }
-
-    @Data
-    @NoArgsConstructor
     public static class BarChartDataBody {
         private List<BarChartDataItem> data;
 
@@ -603,4 +664,17 @@ public class AdminController {
             private Long num;
         }
     }
+
+    @Data
+    @NoArgsConstructor
+    public static class UserIdBody {
+        private String userId;
+    }
+
+    @Data
+    public static class DocumentSize {
+        private long size;
+    }
+
+
 }

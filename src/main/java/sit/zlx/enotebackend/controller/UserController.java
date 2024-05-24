@@ -6,6 +6,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,7 +29,10 @@ import sit.zlx.enotebackend.dto.UserDTO;
 import sit.zlx.enotebackend.service.*;
 
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import static sit.zlx.enotebackend.controller.AuthController.returnSendCodeResult;
 
@@ -63,9 +70,13 @@ public class UserController {
                 return new ResponseDTO<>(ResponseDTO.STATUS_CODE.UNAUTHORIZED.getCode(), new ResponseDTO.ResponseData<>("未登录！", null));
             }
 
-            if (activeUserService.getOne(new QueryWrapper<ActiveUser>().eq("userId", user.getId())) == null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            Date today = new Date();
+
+            if (activeUserService.getOne(new QueryWrapper<ActiveUser>().eq("userId", user.getId()).eq("loginDate", sdf.format(today))) == null) {
                 ActiveUser activeUser = new ActiveUser();
                 activeUser.setUserId(user.getId());
+
                 activeUserService.save(activeUser);
             }
 
@@ -94,7 +105,7 @@ public class UserController {
             }
 
             User targetUser = userService.getOne(new QueryWrapper<User>().eq("email", currentUser.getUsername()));
-            targetUser.setName(requestDTO.getData().getName());
+            targetUser.setName(requestDTO.getData().getName().trim());
             userService.updateById(targetUser);
 
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.SUCCESS.getCode(), new ResponseDTO.ResponseData<>("", "修改成功！"));
@@ -138,7 +149,7 @@ public class UserController {
     }
 
     @PostMapping("/edit/email/validate-code")
-    public ResponseDTO<?> validateEmailCode(@AuthenticationPrincipal UserDetails currentUser, @RequestBody RequestDTO<ValidateCodeBody> requestDTO, HttpSession httpSession) {
+    public ResponseDTO<?> validateEmailCode(@AuthenticationPrincipal UserDetails currentUser, @RequestBody RequestDTO<ValidateEmailCodeBody> requestDTO, HttpSession httpSession) {
         String newEmail = requestDTO.getData().getNewEmail();
 
         String newEmailValidation = MyUtils.Validator.validateEmail(newEmail);
@@ -187,7 +198,6 @@ public class UserController {
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.BAD_REQUEST.getCode(), new ResponseDTO.ResponseData<>(oldEmailCodeResult + "," + newEmailCodeResult, null));
 
         } catch (Exception e) {
-            e.printStackTrace();
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.INTERNAL_SERVER_ERROR.getCode(), new ResponseDTO.ResponseData<>("验证失败，请联系管理员！", null));
         }
     }
@@ -264,7 +274,7 @@ public class UserController {
                 }
             }
 
-            File file = uploadService.storeFile(files[0], UploadService.FILE_TYPE.IMAGE, user.getId());
+            File file = uploadService.storeFile(files[0], UploadService.FILE_TYPE.IMAGE, user.getId(), null);
 
             String avatar = "/api/file/image/" + file.getId();
             user.setAvatar(avatar);
@@ -291,7 +301,7 @@ public class UserController {
 
     @Data
     @NoArgsConstructor
-    public static class ValidateCodeBody {
+    public static class ValidateEmailCodeBody {
         String oldEmailCode;
         String newEmail;
         String newEmailCode;

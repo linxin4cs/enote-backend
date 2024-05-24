@@ -21,7 +21,6 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static sit.zlx.enotebackend.service.MyUtils.generateRandomString;
-import static sit.zlx.enotebackend.service.impl.UserServiceImpl.ROLE_LIST;
 
 
 @Service
@@ -31,7 +30,12 @@ public class AuthServiceImpl implements AuthService {
     private final UserService userService;
     private final MailSender mailSender;
     private final StringRedisTemplate redisTemplate;
-    private final HashMap<String, String> emailSessions = new HashMap<String, String>();
+    private final HashMap<String, String> emailSessions = new HashMap<>();
+    private final ArrayList<String> ROLE_LIST = new ArrayList<>() {{
+        add("USER");
+        add("ADMIN");
+        add("SUPER_ADMIN");
+    }};
     @Value("${spring.mail.properties.from}")
     private String from;
 
@@ -42,36 +46,36 @@ public class AuthServiceImpl implements AuthService {
         this.redisTemplate = redisTemplate;
     }
 
-    // 使用邮箱登录
-    @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        if (email == null) {
-            throw new UsernameNotFoundException("邮箱不能为空！");
-        }
-
-        User user = userService.getOne(new QueryWrapper<User>().eq("email", email));
-
-        if (user == null) {
-            throw new UsernameNotFoundException("邮箱或密码错误！");
-        }
-
-        if (user.getIsDeleting() == 1) {
-            throw new AccessDeniedException("未授权访问！");
-        }
-
-        String password = user.getPassword();
-        String role = ROLE_LIST.get(user.getRole());
-        int status = user.getStatus();
-
-        if (status == 0) {
-            throw new DisabledException("账号已被禁用！");
-        }
-
-        return org.springframework.security.core.userdetails.User.withUsername(email)
-                .password(password)
-                .roles(role)
-                .build();
+// 使用邮箱登录
+@Override
+public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+    if (email == null) {
+        throw new UsernameNotFoundException("邮箱不能为空！");
     }
+
+    User user = userService.getOne(new QueryWrapper<User>().eq("email", email));
+
+    if (user == null) {
+        throw new UsernameNotFoundException("邮箱或密码错误！");
+    }
+
+    if (user.getIsDeleting() == 1) {
+        throw new AccessDeniedException("未授权访问！");
+    }
+
+    String password = user.getPassword();
+    String role = ROLE_LIST.get(user.getRole());
+    int status = user.getStatus();
+
+    if (status == 0) {
+        throw new DisabledException("账号已被禁用！");
+    }
+
+    return org.springframework.security.core.userdetails.User.withUsername(email)
+            .password(password)
+            .roles(role)
+            .build();
+}
 
     /**
      * 1. 生成验证码
@@ -88,6 +92,7 @@ public class AuthServiceImpl implements AuthService {
             put("changeOldEmail", "更换邮箱");
             put("changeNewEmail", "更换邮箱");
             put("changePassword", "修改密码");
+            put("deleteAccount", "删除账户");
         }};
 
         synchronized (emailSessions) {
@@ -108,7 +113,7 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userService.getOne(new QueryWrapper<User>().eq("email", email));
 
-        if (actionKey.equals("reset") || actionKey.equals("changePassword") || actionKey.equals("changeOldEmail")) {
+        if (actionKey.equals("reset") || actionKey.equals("changePassword")) {
             if (user == null) {
                 return "该邮箱未注册";
             }

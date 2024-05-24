@@ -9,10 +9,12 @@
             <result property="parentId" column="parentId" jdbcType="VARCHAR"/>
             <result property="name" column="name" jdbcType="VARCHAR"/>
             <result property="userId" column="userId" jdbcType="VARCHAR"/>
+            <result property="updatedAt" column="updatedAt" jdbcType="TIMESTAMP"/>
+            <result property="isDeleting" column="isDeleting" jdbcType="INTEGER"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,parentId,name,
-        userId
+        userId,updatedAt,isDeleting
     </sql>
 </mapper>

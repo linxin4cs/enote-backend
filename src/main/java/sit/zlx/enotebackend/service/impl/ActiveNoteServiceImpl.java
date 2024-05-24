@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 /**
 * @author linxin4cs
 * @description 针对表【activeNote】的数据库操作Service实现
-* @createDate 2024-04-11 03:41:03
+* @createDate 2024-04-28 04:46:16
 */
 @Service
 public class ActiveNoteServiceImpl extends ServiceImpl<ActiveNoteMapper, ActiveNote>

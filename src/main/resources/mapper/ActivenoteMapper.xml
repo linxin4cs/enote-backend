@@ -5,11 +5,14 @@
 <mapper namespace="sit.zlx.enotebackend.mapper.ActiveNoteMapper">
 
     <resultMap id="BaseResultMap" type="sit.zlx.enotebackend.domain.ActiveNote">
-            <id property="noteId" column="noteId" jdbcType="VARCHAR"/>
-            <result property="lastModifiedTime" column="lastModifiedTime" jdbcType="TIMESTAMP"/>
+            <result property="noteId" column="noteId" jdbcType="VARCHAR"/>
+            <result property="modifiedTime" column="modifiedTime" jdbcType="TIMESTAMP"/>
+            <result property="modifiedDate" column="modifiedDate" jdbcType="DATE"/>
+            <result property="userId" column="userId" jdbcType="VARCHAR"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        noteId,lastModifiedTime
+        noteId,modifiedTime,modifiedDate,
+        userId
     </sql>
 </mapper>

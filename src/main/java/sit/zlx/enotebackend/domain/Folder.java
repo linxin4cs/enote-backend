@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
+import java.util.Date;
 import lombok.Data;
 
 /**
@@ -38,6 +39,18 @@ public class Folder implements Serializable {
     @TableField(value = "userId")
     private String userId;
 
+    /**
+     * 
+     */
+    @TableField(value = "updatedAt")
+    private Date updatedAt;
+
+    /**
+     * 
+     */
+    @TableField(value = "isDeleting")
+    private Integer isDeleting;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 
@@ -56,7 +69,9 @@ public class Folder implements Serializable {
         return (this.getId() == null ? other.getId() == null : this.getId().equals(other.getId()))
             && (this.getParentId() == null ? other.getParentId() == null : this.getParentId().equals(other.getParentId()))
             && (this.getName() == null ? other.getName() == null : this.getName().equals(other.getName()))
-            && (this.getUserId() == null ? other.getUserId() == null : this.getUserId().equals(other.getUserId()));
+            && (this.getUserId() == null ? other.getUserId() == null : this.getUserId().equals(other.getUserId()))
+            && (this.getUpdatedAt() == null ? other.getUpdatedAt() == null : this.getUpdatedAt().equals(other.getUpdatedAt()))
+            && (this.getIsDeleting() == null ? other.getIsDeleting() == null : this.getIsDeleting().equals(other.getIsDeleting()));
     }
 
     @Override
@@ -67,6 +82,8 @@ public class Folder implements Serializable {
         result = prime * result + ((getParentId() == null) ? 0 : getParentId().hashCode());
         result = prime * result + ((getName() == null) ? 0 : getName().hashCode());
         result = prime * result + ((getUserId() == null) ? 0 : getUserId().hashCode());
+        result = prime * result + ((getUpdatedAt() == null) ? 0 : getUpdatedAt().hashCode());
+        result = prime * result + ((getIsDeleting() == null) ? 0 : getIsDeleting().hashCode());
         return result;
     }
 
@@ -80,6 +97,8 @@ public class Folder implements Serializable {
         sb.append(", parentId=").append(parentId);
         sb.append(", name=").append(name);
         sb.append(", userId=").append(userId);
+        sb.append(", updatedAt=").append(updatedAt);
+        sb.append(", isDeleting=").append(isDeleting);
         sb.append(", serialVersionUID=").append(serialVersionUID);
         sb.append("]");
         return sb.toString();

@@ -1,8 +1,6 @@
 package sit.zlx.enotebackend.domain;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 import java.util.Date;
@@ -18,14 +16,26 @@ public class ActiveNote implements Serializable {
     /**
      * 
      */
-    @TableId(value = "noteId")
+    @TableField(value = "noteId")
     private String noteId;
 
     /**
      * 
      */
-    @TableField(value = "lastModifiedTime")
-    private Date lastModifiedTime;
+    @TableField(value = "modifiedTime")
+    private Date modifiedTime;
+
+    /**
+     * 
+     */
+    @TableField(value = "modifiedDate")
+    private Date modifiedDate;
+
+    /**
+     * 
+     */
+    @TableField(value = "userId")
+    private String userId;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
@@ -43,7 +53,9 @@ public class ActiveNote implements Serializable {
         }
         ActiveNote other = (ActiveNote) that;
         return (this.getNoteId() == null ? other.getNoteId() == null : this.getNoteId().equals(other.getNoteId()))
-            && (this.getLastModifiedTime() == null ? other.getLastModifiedTime() == null : this.getLastModifiedTime().equals(other.getLastModifiedTime()));
+            && (this.getModifiedTime() == null ? other.getModifiedTime() == null : this.getModifiedTime().equals(other.getModifiedTime()))
+            && (this.getModifiedDate() == null ? other.getModifiedDate() == null : this.getModifiedDate().equals(other.getModifiedDate()))
+            && (this.getUserId() == null ? other.getUserId() == null : this.getUserId().equals(other.getUserId()));
     }
 
     @Override
@@ -51,7 +63,9 @@ public class ActiveNote implements Serializable {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((getNoteId() == null) ? 0 : getNoteId().hashCode());
-        result = prime * result + ((getLastModifiedTime() == null) ? 0 : getLastModifiedTime().hashCode());
+        result = prime * result + ((getModifiedTime() == null) ? 0 : getModifiedTime().hashCode());
+        result = prime * result + ((getModifiedDate() == null) ? 0 : getModifiedDate().hashCode());
+        result = prime * result + ((getUserId() == null) ? 0 : getUserId().hashCode());
         return result;
     }
 
@@ -62,7 +76,9 @@ public class ActiveNote implements Serializable {
         sb.append(" [");
         sb.append("Hash = ").append(hashCode());
         sb.append(", noteId=").append(noteId);
-        sb.append(", lastModifiedTime=").append(lastModifiedTime);
+        sb.append(", modifiedTime=").append(modifiedTime);
+        sb.append(", modifiedDate=").append(modifiedDate);
+        sb.append(", userId=").append(userId);
         sb.append(", serialVersionUID=").append(serialVersionUID);
         sb.append("]");
         return sb.toString();

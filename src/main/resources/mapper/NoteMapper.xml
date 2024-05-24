@@ -11,10 +11,13 @@
             <result property="createdAt" column="createdAt" jdbcType="TIMESTAMP"/>
             <result property="folderId" column="folderId" jdbcType="VARCHAR"/>
             <result property="status" column="status" jdbcType="INTEGER"/>
+            <result property="stared" column="stared" jdbcType="INTEGER"/>
+            <result property="isDeleting" column="isDeleting" jdbcType="TINYINT"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,userId,title,
-        createdAt,folderId,status
+        createdAt,folderId,status,
+        stared,isDeleting
     </sql>
 </mapper>

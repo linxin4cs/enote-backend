@@ -7,10 +7,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sit.zlx.enotebackend.controller.AdminController;
 import sit.zlx.enotebackend.controller.AdminController.BarChartDataBody;
-import sit.zlx.enotebackend.controller.AdminController.UsageBody;
 import sit.zlx.enotebackend.domain.File;
+import sit.zlx.enotebackend.domain.NoteTag;
 import sit.zlx.enotebackend.domain.PersistentLogins;
 import sit.zlx.enotebackend.domain.User;
+import sit.zlx.enotebackend.repository.NoteDocRepository;
+import sit.zlx.enotebackend.repository.SearchHistoryDocRepository;
 import sit.zlx.enotebackend.service.*;
 
 import java.io.IOException;
@@ -19,6 +21,8 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @Service
 public class AdminServiceImpl implements AdminService {
@@ -27,13 +31,23 @@ public class AdminServiceImpl implements AdminService {
     private final FileService fileService;
     private final ActiveUserService activeUserService;
     private final ActiveNoteService activeNoteService;
-    private final NotetagService notetagService;
+    private final NoteTagService notetagService;
     private final NoteService noteService;
     private final FolderService folderService;
     private final TagService tagService;
+    private final NoteDocRepository noteDocRepository;
+    private final SearchHistoryDocRepository searchHistoryDocRepository;
 
     @Autowired
-    AdminServiceImpl(UserService userService, PersistentLoginsService persistentLoginsService, FileService fileService, ActiveUserService activeUserService, ActiveNoteService activeNoteService, NoteService noteService, NotetagService notetagService, FolderService folderService, TagService tagService) {
+    AdminServiceImpl(
+            UserService userService,
+            PersistentLoginsService persistentLoginsService,
+            FileService fileService, ActiveUserService activeUserService,
+            ActiveNoteService activeNoteService, NoteService noteService,
+            NoteTagService notetagService, FolderService folderService,
+            TagService tagService, NoteDocRepository noteDocRepository,
+            SearchHistoryDocRepository searchHistoryDocRepository
+    ) {
         this.userService = userService;
         this.persistentLoginsService = persistentLoginsService;
         this.fileService = fileService;
@@ -43,30 +57,8 @@ public class AdminServiceImpl implements AdminService {
         this.noteService = noteService;
         this.folderService = folderService;
         this.tagService = tagService;
-    }
-
-    @Override
-    public UsageBody.Size getUsageSize(UsageBody.Size totalSize, List<Long> sizes, String parsedTotalSize) {
-        UsageBody.Size size = new UsageBody.Size();
-        size.setParsedSize(parsedTotalSize);
-
-        if (totalSize.getRawSize() == null) {
-            totalSize.setRawSize(0L);  // 如果 rawSize 是 null，则初始化为 0
-        }
-
-        // 对 size 的 rawSize 做同样处理
-        if (size.getRawSize() == null) {
-            size.setRawSize(0L);  // 如果 rawSize 是 null，则初始化为 0
-        }
-
-        for (Long sizeLong : sizes) {
-            if (sizeLong != null) {  // 这里也检查 sizeLong 是否为 null
-                totalSize.setRawSize(totalSize.getRawSize() + sizeLong);
-                size.setRawSize(size.getRawSize() + sizeLong);
-            }
-        }
-
-        return size;
+        this.noteDocRepository = noteDocRepository;
+        this.searchHistoryDocRepository = searchHistoryDocRepository;
     }
 
     @Override
@@ -97,20 +89,22 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Async
     @Transactional
-    public void deleteUserFiles(List<String> ids) throws IOException {
+    public CompletableFuture<Void> deleteUserFiles(List<String> ids) throws IOException {
         for (String id : ids) {
             List<File> files = fileService.list(new QueryWrapper<File>().eq("userId", id));
             for (File file : files) {
-                Files.deleteIfExists(Paths.get(file.getPath()));
                 fileService.removeById(file.getId());
+                Files.deleteIfExists(Paths.get(file.getPath()));
             }
         }
+
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
     @Async
     @Transactional
-    public void deleteUserRelatedRecords(List<String> ids) {
+    public CompletableFuture<Void> deleteUserRelatedRecords(List<String> ids) {
         for (String id : ids) {
             User user = userService.getById(id);
             List<String> noteIds = noteService.list(new QueryWrapper<sit.zlx.enotebackend.domain.Note>().eq("userId", id)).stream().map(sit.zlx.enotebackend.domain.Note::getId).toList();
@@ -119,13 +113,26 @@ public class AdminServiceImpl implements AdminService {
             activeUserService.remove(new QueryWrapper<sit.zlx.enotebackend.domain.ActiveUser>().eq("userId", id));
             if (!noteIds.isEmpty()) {
                 activeNoteService.remove(new QueryWrapper<sit.zlx.enotebackend.domain.ActiveNote>().in("noteId", noteIds));
-                notetagService.remove(new QueryWrapper<sit.zlx.enotebackend.domain.Notetag>().in("noteId", noteIds));
+                notetagService.remove(new QueryWrapper<NoteTag>().in("noteId", noteIds));
             }
             noteService.removeByIds(noteIds);
+            noteDocRepository.deleteAllById(noteIds);
             folderService.remove(new QueryWrapper<sit.zlx.enotebackend.domain.Folder>().eq("userId", id));
             tagService.remove(new QueryWrapper<sit.zlx.enotebackend.domain.Tag>().eq("userId", id));
             userService.removeById(id);
+            searchHistoryDocRepository.deleteById(id);
         }
+
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Async
+    @Override
+    @Transactional
+    public void deleteUserData(List<String> ids) throws IOException, ExecutionException, InterruptedException {
+        deleteUserFiles(ids).get();
+        deleteUserRelatedRecords(ids);
+
     }
 
 

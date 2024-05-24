@@ -1,5 +1,18 @@
 package sit.zlx.enotebackend.service;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.HashSet;
+import java.util.Set;
+
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -18,6 +31,43 @@ public class MyUtils {
         }
 
         return result.toString();
+    }
+
+    public static UsageBody.Size getUsageSize(UsageBody.Size totalSize, List<Long> sizes, String parsedTotalSize) {
+        UsageBody.Size size = new UsageBody.Size();
+        size.setParsedSize(parsedTotalSize);
+
+        if (totalSize.getRawSize() == null) {
+            totalSize.setRawSize(0L);  // 如果 rawSize 是 null，则初始化为 0
+        }
+
+        // 对 size 的 rawSize 做同样处理
+        if (size.getRawSize() == null) {
+            size.setRawSize(0L);  // 如果 rawSize 是 null，则初始化为 0
+        }
+
+        for (Long sizeLong : sizes) {
+            if (sizeLong != null) {  // 这里也检查 sizeLong 是否为 null
+                totalSize.setRawSize(totalSize.getRawSize() + sizeLong);
+                size.setRawSize(size.getRawSize() + sizeLong);
+            }
+        }
+
+        return size;
+    }
+
+    public static Long calculateWordCount(String text) {
+        String[] parts = text.split("[一-龥]");
+        long wordCount = 0;
+        for (String part : parts) {
+            if (!part.isEmpty()) {
+                wordCount += part.split("\\s+").length;
+            }
+        }
+
+        long chineseCount = text.replaceAll("[^\\u4e00-\\u9fa5]", "").length();
+
+        return (wordCount + chineseCount);
     }
 
     public static class Validator {
@@ -70,6 +120,44 @@ public class MyUtils {
 
             return "";
         }
+
+        public static String validateNoteTitle(String title) {
+            if (title == null || title.isEmpty()) {
+                return "标题不能为空!";
+            } else if (title.length() < 2 || title.length() > 16) {
+                return "标题长度应在2-16位之间!";
+            } else if (!title.matches("^[a-zA-Z0-9\\u4e00-\\u9fa5]+$")) {
+                return "标题不能包含特殊字符!";
+            }
+
+            return "";
+        }
+
+        public static String validateFolderName(String name) {
+            if (name == null || name.isEmpty()) {
+                return "文件夹名不能为空!";
+            } else if (name.length() < 2 || name.length() > 16) {
+                return "文件夹名长度应在2-16位之间!";
+            } else if (!name.matches("^[a-zA-Z0-9\\u4e00-\\u9fa5]+$")) {
+                return "文件夹名不能包含特殊字符!";
+            }
+
+            return "";
+        }
+
+        public static String validateTagName(String name) {
+            if (name == null || name.isEmpty()) {
+                return "标签名不能为空!";
+            } else if (name.length() < 2 || name.length() > 16) {
+                return "标签名长度应在2-16位之间!";
+            } else if (!name.matches("^[a-zA-Z0-9\\u4e00-\\u9fa5]+$")) {
+                return "标签名不能包含特殊字符!";
+            }
+
+            return "";
+        }
+
+
     }
 
     public static class Time {
@@ -112,6 +200,53 @@ public class MyUtils {
                 sum += rawSize;
             }
             return convertRawSize(sum);
+        }
+    }
+
+    public static class NoteContentDiffer {
+        public static Set<String> extractServerFileIds(String htmlContent) {
+            Set<String> fileIds = new HashSet<>();
+            Document doc = Jsoup.parse(htmlContent);
+            Elements sources = doc.select("video source[src], audio source[src], img[src]");
+
+            for (Element source : sources) {
+                String src = source.attr("src");
+                if (src.contains("/api/file/")) {
+                    // 提取ID（假设ID为URL路径中的最后一个部分）
+                    String fileId = src.substring(src.lastIndexOf("/") + 1);
+                    fileIds.add(fileId);
+                }
+            }
+
+            return fileIds;
+        }
+
+        public static Set<String> compareServerFileIds(String oldHtml, String newHtml) {
+            Set<String> oldFileIds = extractServerFileIds(oldHtml);
+            Set<String> newFileIds = extractServerFileIds(newHtml);
+
+            // 计算旧HTML中存在但新HTML中不存在的文件ID
+            oldFileIds.removeAll(newFileIds);
+            return oldFileIds;
+        }
+    }
+
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UsageBody {
+        private UsageBody.Size total;
+        private UsageBody.Size note;
+        private UsageBody.Size image;
+        private UsageBody.Size video;
+        private UsageBody.Size audio;
+
+        @Data
+        @NoArgsConstructor
+        public static class Size {
+            private String parsedSize;
+            private Long rawSize;
         }
     }
 }

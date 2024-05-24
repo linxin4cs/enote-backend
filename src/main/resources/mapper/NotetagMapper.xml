@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="sit.zlx.enotebackend.mapper.NotetagMapper">
+<mapper namespace="sit.zlx.enotebackend.mapper.NoteTagMapper">
 
-    <resultMap id="BaseResultMap" type="sit.zlx.enotebackend.domain.Notetag">
+    <resultMap id="BaseResultMap" type="sit.zlx.enotebackend.domain.NoteTag">
             <result property="noteId" column="noteId" jdbcType="VARCHAR"/>
             <result property="tagId" column="tagId" jdbcType="VARCHAR"/>
     </resultMap>

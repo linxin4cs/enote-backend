@@ -46,18 +46,7 @@ public class AuthController {
         return returnSendCodeResult(result);
     }
 
-    @PostMapping("/send-reset-code")
-    public ResponseDTO<?> sendResetCode(@RequestBody RequestDTO<SendCodeBody> requestDTO,
-                                        HttpSession httpSession) {
 
-        String emailValidation = MyUtils.Validator.validateEmail(requestDTO.getData().getEmail());
-        if (!emailValidation.isEmpty()) {
-            return new ResponseDTO<>(ResponseDTO.STATUS_CODE.BAD_REQUEST.getCode(), new ResponseDTO.ResponseData<>(emailValidation, null));
-        }
-
-        String result = service.sendCode(requestDTO.getData().getEmail(), httpSession.getId(), "reset");
-        return returnSendCodeResult(result);
-    }
 
     @PostMapping("/register")
     public ResponseDTO<?> register(@RequestBody RequestDTO<RegisterBody> requestDTO,
@@ -76,6 +65,19 @@ public class AuthController {
         } else {
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.INTERNAL_SERVER_ERROR.getCode(), new ResponseDTO.ResponseData<>(result, null));
         }
+    }
+
+    @PostMapping("/send-reset-code")
+    public ResponseDTO<?> sendResetCode(@RequestBody RequestDTO<SendCodeBody> requestDTO,
+                                        HttpSession httpSession) {
+
+        String emailValidation = MyUtils.Validator.validateEmail(requestDTO.getData().getEmail());
+        if (!emailValidation.isEmpty()) {
+            return new ResponseDTO<>(ResponseDTO.STATUS_CODE.BAD_REQUEST.getCode(), new ResponseDTO.ResponseData<>(emailValidation, null));
+        }
+
+        String result = service.sendCode(requestDTO.getData().getEmail(), httpSession.getId(), "reset");
+        return returnSendCodeResult(result);
     }
 
     @PostMapping("/validate-reset-code")

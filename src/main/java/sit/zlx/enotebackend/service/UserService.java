@@ -11,9 +11,4 @@ import java.util.ArrayList;
 * @createDate 2024-04-15 01:47:34
 */
 public interface UserService extends IService<User> {
-    ArrayList<String> ROLE_LIST = new ArrayList<>() {{
-        add("USER");
-        add("ADMIN");
-        add("SUPER_ADMIN");
-    }};
 }
