@@ -328,7 +328,7 @@ public class UserNoteController {
     }
 
     @PostMapping("/update/move")
-    public ResponseDTO<MoveDTO> move(@AuthenticationPrincipal UserDetails currentUser, @RequestBody RequestDTO<MoveNoteBody> requestDTO) {
+    public ResponseDTO<NoteItemDTO> move(@AuthenticationPrincipal UserDetails currentUser, @RequestBody RequestDTO<MoveNoteBody> requestDTO) {
         try {
             String userId = userService.getOne(new QueryWrapper<User>().eq("email", currentUser.getUsername())).getId();
 
@@ -385,7 +385,7 @@ public class UserNoteController {
                 moveDTO.setFolderName(folderService.getById(note.getFolderId()).getName());
             }
 
-            return new ResponseDTO<>(ResponseDTO.STATUS_CODE.SUCCESS.getCode(), new ResponseDTO.ResponseData<>("移动成功！", moveDTO));
+            return new ResponseDTO<>(ResponseDTO.STATUS_CODE.SUCCESS.getCode(), new ResponseDTO.ResponseData<>("移动成功！", NoteItemDTO.toListItemDTO(note, activeNoteService, folderService, noteDocRepository)));
         } catch (Exception e) {
            
             return new ResponseDTO<>(ResponseDTO.STATUS_CODE.INTERNAL_SERVER_ERROR.getCode(), new ResponseDTO.ResponseData<>("移动失败！", null));

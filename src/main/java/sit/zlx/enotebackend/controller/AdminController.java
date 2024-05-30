@@ -93,7 +93,7 @@ public class AdminController {
     }
 
     @PostMapping("/manage/user/list")
-    public ResponseDTO<PaginatedDTO<UserDTO>> listUsers(@RequestBody RequestDTO<ListUsersBody> requestDTO) {
+    public ResponseDTO<PaginatedDTO<UserDTO>> listUsers( @RequestBody RequestDTO<ListUsersBody> requestDTO) {
         try {
             ListUsersBody pageParams = requestDTO.getData();
             ListUsersBody.Query searchParams = pageParams.getQuery(); // 获取搜索参数
