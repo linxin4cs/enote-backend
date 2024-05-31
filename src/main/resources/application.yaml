@@ -3,7 +3,7 @@ server:
 
 file:
   upload:
-    base-dir: /Users/linxin4cs/Desktop/Work/Project/enote/data/file
+    base-dir:
 
 spring:
   servlet:
@@ -27,12 +27,12 @@ spring:
       uri: mongodb://localhost:27017/enote
 
   mail:
-    host: smtp.163.com
-    username: sherly_cs_sh@163.com
-    password: INVYADLXFZRQSZAT
+    host:
+    username:
+    password:
     default-encoding: UTF-8
     properties:
-      from: sherly_cs_sh@163.com
+      from:
       mail:
       # 开启debug模式，这样邮件发送过程的日志会在控制台打印出来，方便排查错误
       # debug: true
