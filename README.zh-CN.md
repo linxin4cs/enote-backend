@@ -129,7 +129,7 @@ enotebackend/
 
 1. **克隆项目仓库：**
     ```bash
-    git clone git@github.com:linxin4cs/enote-frontend.git
+    git clone git@github.com:linxin4cs/enote-backend.git
     cd enote-backend
     ```
 
