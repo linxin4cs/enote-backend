@@ -43,7 +43,7 @@ The backend is built with Java and Spring Boot 3, adopting a frontend-backend se
   * APIs for statistics on users, notes, and files (including totals, growth, activity, and storage usage).
 
 * **Platform Data Maintenance (Super Admin Features):**
-  * Basic APIs for data backup and restore (may be simplified in implementation).
+  * Basic APIs for data backup and restore (It's simplified in implementation).
 
 * **General Features:**
   * Global exception handling;
@@ -73,7 +73,7 @@ The project follows a classic three-layer architecture (Controller, Service, Map
 
 * **Controller Layer:** Handles HTTP requests, calls the Service layer, and returns JSON responses;
 * **Service Layer:** Implements core business logic, performs validation and transaction control, and calls the Mapper layer for DB access;
-* **Mapper/DAO Layer:** Uses MyBatis-Plus for MySQL operations, and provides interfaces for MongoDB and Redis (via Spring Data or other clients).
+* **Mapper/DAO Layer:** Uses MyBatis-Plus for MySQL operations, and provides interfaces for MongoDB and Redis (via Spring Data).
 
 Database responsibilities:
 
@@ -88,28 +88,23 @@ Deployment is recommended with Nginx as a reverse proxy. Databases and Redis can
 ```
 enote-backend/
 ├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── com/yourpackage/enote/ # Root package
-│   │   │       ├── EnoteBackendApplication.java # Main application class
-│   │   │       ├── config/ # Configurations (security, database, web, etc.)
-│   │   │       ├── controller/ # Controllers
-│   │   │       ├── domain/ # Entity classes
-│   │   │       ├── dto/ # Request/response DTOs
-│   │   │       ├── enums/ # Enum classes
-│   │   │       ├── interceptor/ # Interceptors/filters
-│   │   │       ├── mapper/ # MyBatis Mapper interfaces
-│   │   │       ├── repository/ # MongoDB/Redis repositories (optional)
-│   │   │       ├── service/ # Service interfaces
-│   │   │       │   └── impl/ # Service implementations
-│   │   │       └── utils/ # Utility classes
-│   │   └── resources/
-│   │       ├── application.yml # Configuration file
-│   │       ├── static/ # Static assets (typically unused)
-│   │       ├── templates/ # Template engine files (typically unused)
-│   │       └── mapper/ # MyBatis XML mapping files (optional)
-│   └── test/ # Test code
-├── pom.xml # Maven config file (or build.gradle)
+│   └── main/
+│       ├── java/
+│       │   └── com/yourpackage/enote/ # Root package
+│       │       ├── EnoteBackendApplication.java # Main application class
+│       │       ├── config/ # Configurations (security, database, web, etc.)
+│       │       ├── controller/ # Controllers
+│       │       ├── domain/ # Entity classes
+│       │       ├── dto/ # Request/response DTOs
+│       │       ├── interceptor/ # Interceptors/filters
+│       │       ├── mapper/ # MyBatis Mapper interfaces
+│       │       ├── repository/ # MongoDB repositories
+│       │       └── service/ # Service interfaces
+│       │           └── impl/ # Service implementations
+│       └── resources/
+│           ├── application.yaml # Configuration file
+│           └── mapper/ # MyBatis XML mapping files
+├── pom.xml # Maven config file
 └── ... # Other files (e.g., .gitignore)
 ```
 
@@ -128,7 +123,7 @@ enote-backend/
 
 1. **Clone the repository:**
     ```bash
-    git clone git@github.com:linxin4cs/enote-frontend.git
+    git clone https://github.com/linxin4cs/enote-backend
     cd enote-backend
     ```
 
@@ -189,6 +184,6 @@ enote-backend/
 
 ## API Documentation
 
-The API follows RESTful conventions, and all available endpoints are defined in the `src/main/java/.../controller/` directory. You can use tools like Postman or Apifox (used for testing in the thesis) for testing.
+The API follows RESTful conventions, and all available endpoints are defined in the `src/main/java/.../controller/` directory. You can use tools like Postman or Apifox for testing.
 
 Frontend project repository: [ENote-Frontend](https://github.com/linxin4cs/enote-frontend)

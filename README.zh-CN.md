@@ -90,23 +90,21 @@
 enotebackend/
 ├── src/
 │   └── main/
-│      ├── java/
-│      │   └── com/yourpackage/enote/ # 根包
-│      │       ├── EnoteBackendApplication.java # 启动类
-│      │       ├── config/ # 配置类（安全、数据库、Web等）
-│      │       ├── controller/ # 控制器
-│      │       ├── domain/ # 实体类（或 entity）
-│      │       ├── dto/ # 请求/响应 DTO
-│      │       ├── enums/ # 枚举类
-│      │       ├── interceptor/ # 拦截器/过滤器
-│      │       ├── mapper/ # MyBatis Mapper 接口
-│      │       ├── repository/ # MongoDB Repository
-│      │       ├── service/ # 服务接口
-│      │       │   └── impl/ # 服务实现
-│      │       └── utils/ # 工具类
-│      └── resources/
-│          ├── application.yml # 配置文件
-│          └── mapper/ # MyBatis XML 映射文件
+│       ├── java/
+│       │   └── com/yourpackage/enote/ # 根包
+│       │       ├── EnoteBackendApplication.java # 启动类
+│       │       ├── config/ # 配置类（安全、数据库、Web等）
+│       │       ├── controller/ # 控制器
+│       │       ├── domain/ # 实体类（或 entity）
+│       │       ├── dto/ # 请求/响应 DTO
+│       │       ├── interceptor/ # 拦截器/过滤器
+│       │       ├── mapper/ # MyBatis Mapper 接口
+│       │       ├── repository/ # MongoDB Repository
+│       │       └── service/ # 服务接口
+│       │           └── impl/ # 服务实现
+│       └── resources/
+│           ├── application.yaml # 配置文件
+│           └── mapper/ # MyBatis XML 映射文件
 ├── pom.xml # Maven 配置文件
 └── ... # 其他文件（如 .gitignore）
 ```
