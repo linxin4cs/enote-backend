@@ -44,7 +44,7 @@
   * 提供用户、笔记、文件等数据的统计接口（包括总量、增量、活跃度、存储使用量等）。
 
 * **平台数据维护（超级管理员功能）：**
-  * 提供数据备份与恢复的基础接口（实现可能较为简化）。
+  * 提供数据备份与恢复的基础接口（实现较为简化）。
 
 * **通用功能：**
   * 全局异常处理；
@@ -64,7 +64,7 @@
   * MongoDB：存储文档类数据（如笔记内容、搜索记录）  
   * Redis：存储键值类缓存（如验证码、会话信息）  
 * **邮件服务：** Spring Boot Mail  
-* **构建工具：** Maven / Gradle  
+* **构建工具：** Maven
 * **API 风格：** RESTful  
 * **常用依赖：** Lombok（用于简化样板代码）等
 
@@ -74,7 +74,7 @@
 
 * **Controller 层：** 接收 HTTP 请求，调用 Service 处理逻辑，返回 JSON 响应；
 * **Service 层：** 实现核心业务逻辑，进行数据校验、事务控制，并调用 Mapper 访问数据库；
-* **Mapper/DAO 层：** 通过 MyBatis-Plus 操作 MySQL，同时提供 MongoDB 和 Redis 的操作接口（可使用 Spring Data 或其他客户端库）。
+* **Mapper/DAO 层：** 通过 MyBatis-Plus 操作 MySQL，同时提供 MongoDB 和 Redis 的操作接口（使用 Spring Data）。
 
 数据库职责划分：
 
@@ -89,28 +89,25 @@
 ```
 enotebackend/
 ├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── com/yourpackage/enote/ # 根包
-│   │   │       ├── EnoteBackendApplication.java # 启动类
-│   │   │       ├── config/ # 配置类（安全、数据库、Web等）
-│   │   │       ├── controller/ # 控制器
-│   │   │       ├── domain/ # 实体类（或 entity）
-│   │   │       ├── dto/ # 请求/响应 DTO
-│   │   │       ├── enums/ # 枚举类
-│   │   │       ├── interceptor/ # 拦截器/过滤器
-│   │   │       ├── mapper/ # MyBatis Mapper 接口
-│   │   │       ├── repository/ # MongoDB/Redis Repository（可选）
-│   │   │       ├── service/ # 服务接口
-│   │   │       │   └── impl/ # 服务实现
-│   │   │       └── utils/ # 工具类
-│   │   └── resources/
-│   │       ├── application.yml # 配置文件
-│   │       ├── static/ # 静态资源（通常不使用）
-│   │       ├── templates/ # 模板引擎文件（通常不使用）
-│   │       └── mapper/ # MyBatis XML 映射文件（可选）
-│   └── test/ # 测试代码
-├── pom.xml # Maven 配置文件（或 build.gradle）
+│   └── main/
+│      ├── java/
+│      │   └── com/yourpackage/enote/ # 根包
+│      │       ├── EnoteBackendApplication.java # 启动类
+│      │       ├── config/ # 配置类（安全、数据库、Web等）
+│      │       ├── controller/ # 控制器
+│      │       ├── domain/ # 实体类（或 entity）
+│      │       ├── dto/ # 请求/响应 DTO
+│      │       ├── enums/ # 枚举类
+│      │       ├── interceptor/ # 拦截器/过滤器
+│      │       ├── mapper/ # MyBatis Mapper 接口
+│      │       ├── repository/ # MongoDB Repository
+│      │       ├── service/ # 服务接口
+│      │       │   └── impl/ # 服务实现
+│      │       └── utils/ # 工具类
+│      └── resources/
+│          ├── application.yml # 配置文件
+│          └── mapper/ # MyBatis XML 映射文件
+├── pom.xml # Maven 配置文件
 └── ... # 其他文件（如 .gitignore）
 ```
 
@@ -190,6 +187,6 @@ enotebackend/
 
 ## API 文档
 
-API 遵循 RESTful 设计风格，所有可用接口定义在 `src/main/java/.../controller/` 目录下。您可以使用 Postman、Apifox（论文中测试使用）等工具进行测试。
+API 遵循 RESTful 设计风格，所有可用接口定义在 `src/main/java/.../controller/` 目录下。您可以使用 Postman、Apifox 等工具进行测试。
 
 前端项目地址：[ENote-Frontend](https://github.com/linxin4cs/enote-frontend)
